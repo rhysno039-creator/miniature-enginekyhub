@@ -1,0 +1,775 @@
+-- [[ KY HUB - ULTRA STABLE & FIXED EXECUTE ]] --
+-- Author: javanese7283
+
+local Rayfield = nil
+
+-- Multi-Loader URL agar tidak gagal download
+local urls = {
+    "https://sirius.menu/rayfield",
+    "https://raw.githubusercontent.com/SiriusSoftwareLtd/Rayfield/main/source",
+    "https://raw.githubusercontent.com/jensonhirst/Rayfield/main/source"
+}
+
+for _, url in ipairs(urls) do
+    local success, result = pcall(function()
+        return loadstring(game:HttpGet(url))()
+    end)
+    if success and result then
+        Rayfield = result
+        break
+    end
+end
+
+if not Rayfield then
+    warn("Gagal memuat Rayfield UI Library. Periksa koneksi atau executor Anda.")
+    return
+end
+
+local Window = Rayfield:CreateWindow({
+    Name = "Ky HUB",
+    LoadingTitle = "Ky HUB Suite",
+    LoadingSubtitle = "by javanese7283",
+    ConfigurationSaving = { Enabled = false },
+    Discord = { Enabled = false },
+    KeySystem = false
+})
+
+--------------------------------------------------------------------------------
+-- SERVICES & CORE VARIABLES
+--------------------------------------------------------------------------------
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TeleportService = game:GetService("TeleportService")
+local Lighting = game:GetService("Lighting")
+local Stats = game:GetService("Stats")
+local Workspace = game:GetService("Workspace")
+
+local Flags = {
+    Fly = false, FlySpeed = 50,
+    WalkSpeed = false, WalkSpeedVal = 16,
+    MoonWalk = false, Noclip = false, InfJump = false,
+    JumpPower = false, JumpPowerVal = 50,
+    TPWalk = false, TPWalkSpeed = 2, ShiftLock = false,
+    PlayerESP = false, NPCESP = false, BrightToggle = false, BrightnessVal = 2,
+    GhostOther = false, Invisible = false, HitboxExtender = false, HitboxSize = 10,
+    PlayerTracers = false, NPCTracers = false, AntiAFK = true, RunSpeed = 16
+}
+
+local SavedTPLocations = {}
+local SavedRunLocations = {}
+local PlayerTracersLines = {}
+local NPCTracersLines = {}
+local StartTime = os.time()
+local DefaultWalkSpeed = 16
+local DefaultJumpPower = 50
+local DefaultGravity = Workspace.Gravity
+
+local function getCharacter() return LocalPlayer.Character end
+local function getHumanoid() 
+    local c = getCharacter() 
+    return c and c:FindFirstChildOfClass("Humanoid")
+end
+local function getRoot() 
+    local c = getCharacter() 
+    return c and c:FindFirstChild("HumanoidRootPart")
+end
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    local hum = char:WaitForChild("Humanoid", 5)
+    if hum then 
+        DefaultWalkSpeed = hum.WalkSpeed
+        DefaultJumpPower = hum.JumpPower 
+    end
+end)
+
+if getHumanoid() then 
+    DefaultWalkSpeed = getHumanoid().WalkSpeed
+    DefaultJumpPower = getHumanoid().JumpPower 
+end
+
+local function GetPlayerNames()
+    local plrs = {}
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer then table.insert(plrs, p.Name) end
+    end
+    if #plrs == 0 then table.insert(plrs, "None") end
+    return plrs
+end
+
+--------------------------------------------------------------------------------
+-- TABS CREATION
+--------------------------------------------------------------------------------
+local MovementTab     = Window:CreateTab("Movement", 4483362458)
+local VisualsTab      = Window:CreateTab("Visual / ESP", 4483362458)
+local OptimizationTab = Window:CreateTab("Optimization", 4483362458)
+local TeleportTab     = Window:CreateTab("Teleport", 4483362458)
+local UtilityTab      = Window:CreateTab("Utility", 4483362458)
+local SettingsTab     = Window:CreateTab("UI Settings", 4483362458)
+
+--------------------------------------------------------------------------------
+-- 1. MOVEMENT TAB
+--------------------------------------------------------------------------------
+MovementTab:CreateToggle({
+    Name = "Fly",
+    CurrentValue = false,
+    Callback = function(Value)
+        Flags.Fly = Value
+        local hum = getHumanoid()
+        if not Value then
+            Workspace.Gravity = DefaultGravity
+            if hum then
+                hum.PlatformStand = false
+                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+            end
+        else
+            DefaultGravity = Workspace.Gravity
+            if hum then
+                hum:ChangeState(Enum.HumanoidStateType.Physics)
+            end
+        end
+    end
+})
+
+MovementTab:CreateInput({
+    Name = "Fly Speed",
+    PlaceholderText = "50",
+    RemoveTextOnFocus = false,
+    Callback = function(Text) Flags.FlySpeed = tonumber(Text) or 50 end
+})
+
+MovementTab:CreateToggle({ 
+    Name = "Enable WalkSpeed", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        Flags.WalkSpeed = v 
+        if not v then
+            local hum = getHumanoid()
+            if hum then hum.WalkSpeed = DefaultWalkSpeed end
+        end
+    end 
+})
+
+MovementTab:CreateInput({
+    Name = "WalkSpeed Value",
+    PlaceholderText = "16",
+    RemoveTextOnFocus = false,
+    Callback = function(Text) Flags.WalkSpeedVal = tonumber(Text) or 16 end
+})
+
+MovementTab:CreateToggle({ Name = "Moon Walk", CurrentValue = false, Callback = function(v) Flags.MoonWalk = v end })
+MovementTab:CreateToggle({ Name = "Noclip", CurrentValue = false, Callback = function(v) Flags.Noclip = v end })
+MovementTab:CreateToggle({ Name = "Inf Jump", CurrentValue = false, Callback = function(v) Flags.InfJump = v end })
+
+MovementTab:CreateToggle({ 
+    Name = "Enable Jump Power", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        Flags.JumpPower = v 
+        if not v then
+            local hum = getHumanoid()
+            if hum then hum.JumpPower = DefaultJumpPower end
+        end
+    end 
+})
+
+MovementTab:CreateInput({
+    Name = "Jump Power Value",
+    PlaceholderText = "50",
+    RemoveTextOnFocus = false,
+    Callback = function(Text) Flags.JumpPowerVal = tonumber(Text) or 50 end
+})
+
+MovementTab:CreateToggle({ Name = "TP Walk (Bypass)", CurrentValue = false, Callback = function(v) Flags.TPWalk = v end })
+MovementTab:CreateInput({
+    Name = "TP Walk Speed",
+    PlaceholderText = "2",
+    RemoveTextOnFocus = false,
+    Callback = function(Text) Flags.TPWalkSpeed = tonumber(Text) or 2 end
+})
+
+MovementTab:CreateToggle({ Name = "Shift Lock", CurrentValue = false, Callback = function(v) Flags.ShiftLock = v end })
+
+RunService.Stepped:Connect(function(_, delta)
+    local hum, root = getHumanoid(), getRoot()
+    local cam = Workspace.CurrentCamera
+    
+    if Flags.Fly and root and hum then
+        Workspace.Gravity = 0
+        root.AssemblyLinearVelocity = Vector3.zero
+        root.AssemblyAngularVelocity = Vector3.zero
+        
+        local targetCFrame = CFrame.new(root.Position, root.Position + cam.CFrame.LookVector)
+        root.CFrame = root.CFrame:Lerp(targetCFrame, 0.25)
+        
+        local moveDir = hum.MoveDirection
+        if moveDir.Magnitude > 0 then
+            local flatForward = Vector3.new(cam.CFrame.LookVector.X, 0, cam.CFrame.LookVector.Z).Unit
+            local flatRight = Vector3.new(cam.CFrame.RightVector.X, 0, cam.CFrame.RightVector.Z).Unit
+            local forwardInput = moveDir:Dot(flatForward)
+            local rightInput = moveDir:Dot(flatRight)
+            
+            local flyVector = (cam.CFrame.LookVector * forwardInput) + (cam.CFrame.RightVector * rightInput)
+            if flyVector.Magnitude > 0 then
+                root.CFrame = root.CFrame + (flyVector.Unit * (Flags.FlySpeed * delta))
+            end
+        end
+    end
+    
+    if Flags.Noclip and LocalPlayer.Character then
+        for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
+            if v:IsA("BasePart") then v.CanCollide = false end
+        end
+    end
+end)
+
+RunService.RenderStepped:Connect(function()
+    local hum, root = getHumanoid(), getRoot()
+    local cam = Workspace.CurrentCamera
+    
+    if hum then
+        if Flags.WalkSpeed then hum.WalkSpeed = Flags.WalkSpeedVal end
+        if Flags.JumpPower then 
+            hum.UseJumpPower = true 
+            hum.JumpPower = Flags.JumpPowerVal 
+        end
+    end
+    
+    if Flags.MoonWalk and hum and root and hum.MoveDirection.Magnitude > 0 then
+        root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(180), 0)
+    end
+    
+    if Flags.TPWalk and hum and root and hum.MoveDirection.Magnitude > 0 then
+        root.CFrame = root.CFrame + (hum.MoveDirection * Flags.TPWalkSpeed)
+    end
+
+    if Flags.ShiftLock and not Flags.Fly and root then
+        local lookVector = cam.CFrame.LookVector
+        root.CFrame = CFrame.new(root.Position, root.Position + Vector3.new(lookVector.X, 0, lookVector.Z))
+    end
+end)
+
+UserInputService.JumpRequest:Connect(function()
+    if Flags.InfJump then
+        local hum = getHumanoid()
+        if hum then hum:ChangeState(Enum.HumanoidStateType.Jumping) end
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- 2. VISUAL / ESP TAB
+--------------------------------------------------------------------------------
+VisualsTab:CreateSection("ESP Settings")
+
+VisualsTab:CreateToggle({ 
+    Name = "ESP player", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        Flags.PlayerESP = v 
+        if not v then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p.Character then
+                    if p.Character:FindFirstChild("Head") and p.Character.Head:FindFirstChild("KyESP_Tag") then
+                        p.Character.Head.KyESP_Tag:Destroy()
+                    end
+                    if p.Character:FindFirstChild("KyESP_Highlight") then
+                        p.Character.KyESP_Highlight:Destroy()
+                    end
+                end
+            end
+        end
+    end 
+})
+
+VisualsTab:CreateToggle({ 
+    Name = "ESP npc", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        Flags.NPCESP = v 
+        if not v then
+            for _, model in pairs(Workspace:GetDescendants()) do
+                if model:IsA("Model") then
+                    if model:FindFirstChild("Head") and model.Head:FindFirstChild("KyNPC_ESP_Tag") then
+                        model.Head.KyNPC_ESP_Tag:Destroy()
+                    end
+                    if model:FindFirstChild("KyNPC_Highlight") then
+                        model.KyNPC_Highlight:Destroy()
+                    end
+                end
+            end
+        end
+    end 
+})
+
+VisualsTab:CreateToggle({ 
+    Name = "Tracers player", 
+    CurrentValue = false, 
+    Callback = function(v) Flags.PlayerTracers = v end 
+})
+
+VisualsTab:CreateToggle({ 
+    Name = "Tracers npc", 
+    CurrentValue = false, 
+    Callback = function(v) Flags.NPCTracers = v end 
+})
+
+VisualsTab:CreateSection("Spectate")
+
+local SpectateTarget = "None"
+local SpectateDropdown = VisualsTab:CreateDropdown({
+    Name = "Spectate Player",
+    Options = GetPlayerNames(),
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Callback = function(Option)
+        SpectateTarget = type(Option) == "table" and Option[1] or Option
+        if SpectateTarget == "None" or not Players:FindFirstChild(SpectateTarget) then
+            Workspace.CurrentCamera.CameraSubject = getHumanoid()
+        else
+            local target = Players[SpectateTarget]
+            if target.Character and target.Character:FindFirstChildOfClass("Humanoid") then
+                Workspace.CurrentCamera.CameraSubject = target.Character:FindFirstChildOfClass("Humanoid")
+            end
+        end
+    end
+})
+
+VisualsTab:CreateButton({ 
+    Name = "Refresh list", 
+    Callback = function() SpectateDropdown:Set(GetPlayerNames()) end 
+})
+
+VisualsTab:CreateButton({ 
+    Name = "Stop Spectate", 
+    Callback = function() 
+        SpectateDropdown:Set({"None"}) 
+        Workspace.CurrentCamera.CameraSubject = getHumanoid() 
+    end 
+})
+
+VisualsTab:CreateSection("World & Character")
+
+local OrigBrightness = Lighting.Brightness
+local OrigClockTime = Lighting.ClockTime
+
+VisualsTab:CreateToggle({ 
+    Name = "Custom Brightness", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        Flags.BrightToggle = v 
+        if not v then
+            Lighting.Brightness = OrigBrightness
+            Lighting.ClockTime = OrigClockTime
+        end
+    end 
+})
+
+VisualsTab:CreateSlider({
+    Name = "Brightness Level",
+    Range = {0, 10},
+    Increment = 1,
+    CurrentValue = 2,
+    Callback = function(Value) Flags.BrightnessVal = Value end
+})
+
+VisualsTab:CreateToggle({ Name = "Ghost Other Players", CurrentValue = false, Callback = function(v) Flags.GhostOther = v end })
+
+VisualsTab:CreateToggle({
+    Name = "Invisible Character",
+    CurrentValue = false,
+    Callback = function(Value)
+        Flags.Invisible = Value
+        local char = getCharacter()
+        if char then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") or v:IsA("Decal") then
+                    v.Transparency = Value and 1 or 0
+                end
+            end
+        end
+    end
+})
+
+VisualsTab:CreateToggle({ 
+    Name = "Hitbox Extender (Warna Merah)", 
+    CurrentValue = false, 
+    Callback = function(v) 
+        Flags.HitboxExtender = v 
+        if not v then
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = p.Character.HumanoidRootPart
+                    hrp.Size = Vector3.new(2, 2, 1)
+                    hrp.Transparency = 1
+                    hrp.Color = Color3.fromRGB(163, 162, 165)
+                    hrp.Material = Enum.Material.Plastic
+                end
+            end
+        end
+    end 
+})
+
+VisualsTab:CreateSlider({ Name = "Hitbox Size", Range = {2, 50}, Increment = 1, CurrentValue = 10, Callback = function(v) Flags.HitboxSize = v end })
+
+RunService.RenderStepped:Connect(function()
+    if Flags.BrightToggle then
+        Lighting.Brightness = Flags.BrightnessVal
+        Lighting.GlobalShadows = false
+        Lighting.ClockTime = 12
+        Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+    end
+
+    local char = getCharacter()
+    if char then
+        if Flags.Invisible then
+            for _, v in pairs(char:GetDescendants()) do
+                if v:IsA("BasePart") or v:IsA("Decal") then
+                    v.Transparency = 1
+                end
+            end
+        else
+            local root = getRoot()
+            if root then root.Transparency = 1 end
+        end
+    end
+
+    if Flags.PlayerESP then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character then
+                local playerChar = p.Character
+                local head = playerChar:FindFirstChild("Head")
+                
+                local highlight = playerChar:FindFirstChild("KyESP_Highlight")
+                if not highlight then
+                    highlight = Instance.new("Highlight", playerChar)
+                    highlight.Name = "KyESP_Highlight"
+                    highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                    highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                    highlight.FillTransparency = 0.5
+                    highlight.OutlineTransparency = 0
+                end
+
+                if head then
+                    local tag = head:FindFirstChild("KyESP_Tag")
+                    if not tag then
+                        tag = Instance.new("BillboardGui", head)
+                        tag.Name = "KyESP_Tag"
+                        tag.Size = UDim2.new(0, 120, 0, 40)
+                        tag.StudsOffset = Vector3.new(0, 2, 0)
+                        tag.AlwaysOnTop = true
+                        
+                        local txt = Instance.new("TextLabel", tag)
+                        txt.Name = "Label"
+                        txt.Size = UDim2.new(1, 0, 1, 0)
+                        txt.BackgroundTransparency = 1
+                        txt.TextColor3 = Color3.fromRGB(255, 50, 50)
+                        txt.TextStrokeTransparency = 0
+                        txt.Font = Enum.Font.SourceSansBold
+                        txt.TextSize = 13
+                    end
+                    
+                    local myRoot = getRoot()
+                    local dist = myRoot and math.floor((head.Position - myRoot.Position).Magnitude) or 0
+                    tag.Label.Text = p.Name .. "\n[" .. dist .. " Studs]"
+                end
+            end
+        end
+    end
+
+    if Flags.NPCESP then
+        for _, model in pairs(Workspace:GetDescendants()) do
+            if model:IsA("Model") and model ~= LocalPlayer.Character and model:FindFirstChildOfClass("Humanoid") then
+                if not Players:GetPlayerFromCharacter(model) then
+                    local head = model:FindFirstChild("Head")
+                    
+                    local highlight = model:FindFirstChild("KyNPC_Highlight")
+                    if not highlight then
+                        highlight = Instance.new("Highlight", model)
+                        highlight.Name = "KyNPC_Highlight"
+                        highlight.FillColor = Color3.fromRGB(0, 150, 255)
+                        highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        highlight.FillTransparency = 0.5
+                        highlight.OutlineTransparency = 0
+                    end
+                    
+                    if head then
+                        local tag = head:FindFirstChild("KyNPC_ESP_Tag")
+                        if not tag then
+                            tag = Instance.new("BillboardGui", head)
+                            tag.Name = "KyNPC_ESP_Tag"
+                            tag.Size = UDim2.new(0, 120, 0, 40)
+                            tag.StudsOffset = Vector3.new(0, 2, 0)
+                            tag.AlwaysOnTop = true
+                            
+                            local txt = Instance.new("TextLabel", tag)
+                            txt.Name = "Label"
+                            txt.Size = UDim2.new(1, 0, 1, 0)
+                            txt.BackgroundTransparency = 1
+                            txt.TextColor3 = Color3.fromRGB(80, 200, 255)
+                            txt.TextStrokeTransparency = 0
+                            txt.Font = Enum.Font.SourceSansBold
+                            txt.TextSize = 13
+                        end
+                        
+                        local myRoot = getRoot()
+                        local dist = myRoot and math.floor((head.Position - myRoot.Position).Magnitude) or 0
+                        tag.Label.Text = "[NPC] " .. model.Name .. "\n[" .. dist .. " Studs]"
+                    end
+                end
+            end
+        end
+    end
+
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            for _, v in pairs(p.Character:GetDescendants()) do
+                if v:IsA("BasePart") then v.LocalTransparencyModifier = Flags.GhostOther and 1 or 0 end
+            end
+        end
+    end
+
+    if Flags.HitboxExtender then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = p.Character.HumanoidRootPart
+                hrp.Size = Vector3.new(Flags.HitboxSize, Flags.HitboxSize, Flags.HitboxSize)
+                hrp.Transparency = 0.5
+                hrp.Color = Color3.fromRGB(255, 0, 0)
+                hrp.Material = Enum.Material.Neon
+                hrp.CanCollide = false
+            end
+        end
+    end
+
+    pcall(function()
+        if typeof(Drawing) ~= "table" and typeof(Drawing) ~= "userdata" then return end
+        local cam = Workspace.CurrentCamera
+        local viewportSize = cam.ViewportSize
+        local bottomCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y)
+
+        if not Flags.PlayerTracers then
+            for _, line in pairs(PlayerTracersLines) do pcall(function() line:Remove() end) end
+            table.clear(PlayerTracersLines)
+        else
+            for _, p in pairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    local hrp = p.Character.HumanoidRootPart
+                    local vector, onScreen = cam:WorldToViewportPoint(hrp.Position)
+                    local line = PlayerTracersLines[p.Name] or Drawing.new("Line")
+                    PlayerTracersLines[p.Name] = line
+                    
+                    if onScreen then
+                        line.From = bottomCenter
+                        line.To = Vector2.new(vector.X, vector.Y)
+                        line.Color = Color3.fromRGB(255, 0, 0)
+                        line.Thickness = 1.5
+                        line.Transparency = 1
+                        line.Visible = true
+                    else
+                        line.Visible = false
+                    end
+                elseif PlayerTracersLines[p.Name] then
+                    PlayerTracersLines[p.Name].Visible = false
+                end
+            end
+        end
+
+        if not Flags.NPCTracers then
+            for _, line in pairs(NPCTracersLines) do pcall(function() line:Remove() end) end
+            table.clear(NPCTracersLines)
+        else
+            for _, model in pairs(Workspace:GetDescendants()) do
+                if model:IsA("Model") and model ~= LocalPlayer.Character and model:FindFirstChildOfClass("Humanoid") then
+                    if not Players:GetPlayerFromCharacter(model) then
+                        local rootPart = model:FindFirstChild("HumanoidRootPart") or model:FindFirstChild("Head")
+                        if rootPart then
+                            local vector, onScreen = cam:WorldToViewportPoint(rootPart.Position)
+                            local lineKey = tostring(model:GetDebugId())
+                            local line = NPCTracersLines[lineKey] or Drawing.new("Line")
+                            NPCTracersLines[lineKey] = line
+                            
+                            if onScreen then
+                                line.From = bottomCenter
+                                line.To = Vector2.new(vector.X, vector.Y)
+                                line.Color = Color3.fromRGB(0, 150, 255)
+                                line.Thickness = 1.5
+                                line.Transparency = 1
+                                line.Visible = true
+                            else
+                                line.Visible = false
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+--------------------------------------------------------------------------------
+-- 3. OPTIMIZATION TAB
+--------------------------------------------------------------------------------
+OptimizationTab:CreateButton({
+    Name = "FPS Boost & Safe Reduce Lag",
+    Callback = function()
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("BasePart") then
+                v.Material = Enum.Material.SmoothPlastic
+                v.CastShadow = false
+            elseif v:IsA("Decal") or v:IsA("Texture") then
+                v:Destroy()
+            elseif v:IsA("ParticleEmitter") or v:IsA("PostEffect") then
+                v.Enabled = false
+            end
+        end
+        Rayfield:Notify({Title = "Optimization", Content = "FPS Boost Applied Safely!", Duration = 3})
+    end
+})
+
+OptimizationTab:CreateToggle({ Name = "Anti AFK", CurrentValue = true, Callback = function(v) Flags.AntiAFK = v end })
+
+local vu = game:GetService("VirtualUser")
+LocalPlayer.Idled:Connect(function()
+    if Flags.AntiAFK then
+        vu:CaptureController()
+        vu:ClickButton2(Vector2.new())
+    end
+end)
+
+local StatsParagraph = OptimizationTab:CreateParagraph({Title = "System Live Status", Content = "Calculating metrics..."})
+local currentFPS = 60
+
+RunService.RenderStepped:Connect(function(delta)
+    if delta > 0 then currentFPS = math.floor(1 / delta) end
+end)
+
+task.spawn(function()
+    while task.wait(0.5) do
+        local ping = math.floor(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
+        local elapsed = os.time() - StartTime
+        local hours, mins, secs = math.floor(elapsed / 3600), math.floor((elapsed % 3600) / 60), elapsed % 60
+        StatsParagraph:Set({Title = "System Live Status", Content = string.format("FPS: %d | Ping: %d ms\nPlaytime: %02d:%02d:%02d", currentFPS, ping, hours, mins, secs)})
+    end
+end)
+
+--------------------------------------------------------------------------------
+-- 4. TELEPORT TAB
+--------------------------------------------------------------------------------
+local TargetTPName = "None"
+local TPPlayerDropdown = TeleportTab:CreateDropdown({
+    Name = "Select Player to TP",
+    Options = GetPlayerNames(),
+    CurrentOption = {"None"},
+    MultipleOptions = false,
+    Callback = function(Option) TargetTPName = type(Option) == "table" and Option[1] or Option end
+})
+
+TeleportTab:CreateButton({ 
+    Name = "Refresh list", 
+    Callback = function() TPPlayerDropdown:Set(GetPlayerNames()) end 
+})
+
+TeleportTab:CreateButton({
+    Name = "Teleport to Target Player",
+    Callback = function()
+        if TargetTPName and Players:FindFirstChild(TargetTPName) then
+            local targetChar = Players[TargetTPName].Character
+            local root = getRoot()
+            if targetChar and targetChar:FindFirstChild("HumanoidRootPart") and root then
+                root.CFrame = targetChar.HumanoidRootPart.CFrame
+            end
+        end
+    end
+})
+
+TeleportTab:CreateSection("Set & TP (5 Slots)")
+for i = 1, 5 do
+    TeleportTab:CreateButton({Name = "Save Slot " .. i, Callback = function() local r = getRoot() if r then SavedTPLocations[i] = r.CFrame Rayfield:Notify({Title = "Teleport", Content = "Saved Slot " .. i, Duration = 2}) end end})
+    TeleportTab:CreateButton({Name = "TP to Slot " .. i, Callback = function() local r = getRoot() if r and SavedTPLocations[i] then r.CFrame = SavedTPLocations[i] end end})
+end
+
+TeleportTab:CreateSection("Set & Run (5 Slots)")
+TeleportTab:CreateInput({
+    Name = "Run Speed Value",
+    PlaceholderText = "16",
+    RemoveTextOnFocus = false,
+    Callback = function(Text) Flags.RunSpeed = tonumber(Text) or 16 end
+})
+
+for i = 1, 5 do
+    TeleportTab:CreateButton({Name = "Save Run Point " .. i, Callback = function() local r = getRoot() if r then SavedRunLocations[i] = r.Position Rayfield:Notify({Title = "Auto Run", Content = "Saved Run Point " .. i, Duration = 2}) end end})
+    TeleportTab:CreateButton({
+        Name = "Run to Point " .. i, 
+        Callback = function() 
+            local h = getHumanoid() 
+            if h and SavedRunLocations[i] then 
+                h.WalkSpeed = Flags.RunSpeed
+                h:MoveTo(SavedRunLocations[i]) 
+            end 
+        end
+    })
+end
+
+--------------------------------------------------------------------------------
+-- 5. UTILITY TAB
+--------------------------------------------------------------------------------
+local CloneCount = 0
+
+UtilityTab:CreateButton({
+    Name = "Clone My Avatar (Spawn Copy)",
+    Callback = function()
+        local char = getCharacter()
+        local root = getRoot()
+        
+        if char and root then
+            char.Archivable = true
+            local clonedChar = char:Clone()
+            char.Archivable = false
+            
+            CloneCount = CloneCount + 1
+            clonedChar.Name = LocalPlayer.Name .. "_Clone_" .. CloneCount
+            
+            local spawnOffset = Vector3.new((CloneCount * 3), 0, 0)
+            clonedChar:MoveTo(root.Position + spawnOffset)
+            clonedChar.Parent = Workspace
+            
+            for _, script in pairs(clonedChar:GetDescendants()) do
+                if script:IsA("LocalScript") or script:IsA("Script") then
+                    script:Destroy()
+                end
+            end
+            
+            Rayfield:Notify({Title = "Clone Avatar", Content = "Spawned Clone Avatar #" .. CloneCount, Duration = 3})
+        end
+    end
+})
+
+UtilityTab:CreateButton({
+    Name = "Clear All Clones",
+    Callback = function()
+        for _, obj in pairs(Workspace:GetChildren()) do
+            if obj.Name:find(LocalPlayer.Name .. "_Clone_") then
+                obj:Destroy()
+            end
+        end
+        CloneCount = 0
+        Rayfield:Notify({Title = "Clone Avatar", Content = "All cloned avatars deleted!", Duration = 3})
+    end
+})
+
+UtilityTab:CreateButton({Name = "Rejoin Server", Callback = function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer) end})
+UtilityTab:CreateButton({Name = "Server Hop", Callback = function() TeleportService:Teleport(game.PlaceId, LocalPlayer) end})
+
+--------------------------------------------------------------------------------
+-- 6. UI SETTINGS TAB
+--------------------------------------------------------------------------------
+SettingsTab:CreateButton({
+    Name = "TikTok: javanese7283 (Click to Copy)",
+    Callback = function()
+        setclipboard("javanese7283")
+        Rayfield:Notify({Title = "Ky HUB Credit", Content = "Username 'javanese7283' copied to clipboard!", Duration = 3})
+    end
+})
+
+Rayfield:Notify({Title = "Ky HUB Loaded", Content = "Script berhasil dijalankan!", Duration = 5})
