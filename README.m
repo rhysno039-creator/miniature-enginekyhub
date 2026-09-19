@@ -1,438 +1,311 @@
 -- =====================================================================
--- KYZEN HUB - FIXED & OPTIMIZED EXCLUSIVE SCRIPT
+-- KYZEN HUB v2 - MOVEMENT MENU (Rayfield)
 -- =====================================================================
 
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
 local Workspace = game:GetService("Workspace")
-local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
 
--- Hapus UI lama jika ada
-if CoreGui:FindFirstChild("KyzenHubExclusive") then
-    CoreGui.KyzenHubExclusive:Destroy()
-end
+local Window = Rayfield:CreateWindow({
+   Name = "KYZEN HUB v2 | Movement Menu",
+   LoadingTitle = "KYZEN HUB",
+   LoadingSubtitle = "Movement Module",
+   ConfigurationSaving = { Enabled = false }
+})
 
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "KyzenHubExclusive"
-ScreenGui.Parent = CoreGui
-ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
-ScreenGui.ResetOnSpawn = false
+local MoveTab = Window:CreateTab("Movement", 4483345998)
+MoveTab:CreateSection("Complete Movement Controls (ON/OFF & Custom Input)")
 
--- Ambil Thumbnail Avatar Roblox Player Asli dengan Aman
-local success, thumbImage = pcall(function()
-    return Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size150x150)
-end)
-local avatarImage = success and thumbImage or "rbxassetid://10884221528"
+-- 1. CFrame Fly
+getgenv().FlyEnabled = false
+getgenv().FlySpeed = 50
+local flyConnection
 
--- Main Frame (Jendela Utama)
-local MainFrame = Instance.new("Frame")
-MainFrame.Name = "MainFrame"
-MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(15, 18, 24)
-MainFrame.BorderColor3 = Color3.fromRGB(40, 45, 60)
-MainFrame.BorderSizePixel = 1
-MainFrame.Position = UDim2.new(0.5, -275, 0.5, -175)
-MainFrame.Size = UDim2.new(0, 550, 0, 350)
-MainFrame.Active = true
-MainFrame.Draggable = true
-
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 8)
-UICorner.Parent = MainFrame
-
--- Top Bar
-local TopBar = Instance.new("Frame")
-TopBar.Name = "TopBar"
-TopBar.Parent = MainFrame
-TopBar.BackgroundColor3 = Color3.fromRGB(20, 24, 33)
-TopBar.BorderSizePixel = 0
-TopBar.Size = UDim2.new(1, 0, 0, 35)
-
-local TopCorner = Instance.new("UICorner")
-TopCorner.CornerRadius = UDim.new(0, 8)
-TopCorner.Parent = TopBar
-
--- Avatar Header Atas
-local HeaderAvatar = Instance.new("ImageLabel")
-HeaderAvatar.Parent = TopBar
-HeaderAvatar.BackgroundTransparency = 1
-HeaderAvatar.Position = UDim2.new(0, 8, 0, 7)
-HeaderAvatar.Size = UDim2.new(0, 22, 0, 22)
-HeaderAvatar.Image = avatarImage
-
-local HeaderAvatarCorner = Instance.new("UICorner")
-HeaderAvatarCorner.CornerRadius = UDim.new(1, 0)
-HeaderAvatarCorner.Parent = HeaderAvatar
-
--- Title Hub di Header
-local TitleLabel = Instance.new("TextLabel")
-TitleLabel.Parent = TopBar
-TitleLabel.BackgroundTransparency = 1
-TitleLabel.Position = UDim2.new(0, 36, 0, 0)
-TitleLabel.Size = UDim2.new(0, 400, 1, 0)
-TitleLabel.Font = Enum.Font.GothamBold
-TitleLabel.Text = LocalPlayer.Name .. " | Kyzen Hub | Delta Ready"
-TitleLabel.TextColor3 = Color3.fromRGB(200, 210, 230)
-TitleLabel.TextSize = 10
-TitleLabel.TextXAlignment = Enum.TextXAlignment.Left
-
--- Tombol Kontrol Kanan Atas (Close)
-local CloseButton = Instance.new("TextButton")
-CloseButton.Parent = TopBar
-CloseButton.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-CloseButton.BackgroundTransparency = 0.5
-CloseButton.Position = UDim2.new(1, -28, 0, 6)
-CloseButton.Size = UDim2.new(0, 22, 0, 22)
-CloseButton.Font = Enum.Font.GothamBold
-CloseButton.Text = "×"
-CloseButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseButton.TextSize = 14
-CloseButton.ZIndex = 5
-
-local CloseCorner = Instance.new("UICorner")
-CloseCorner.CornerRadius = UDim.new(0, 4)
-CloseCorner.Parent = CloseButton
-
-CloseButton.MouseButton1Click:Connect(function()
-    ScreenGui:Destroy()
-end)
-
--- Tombol Maximize
-local MaximizeButton = Instance.new("TextButton")
-MaximizeButton.Parent = TopBar
-MaximizeButton.BackgroundColor3 = Color3.fromRGB(60, 120, 255)
-MaximizeButton.BackgroundTransparency = 0.5
-MaximizeButton.Position = UDim2.new(1, -54, 0, 6)
-MaximizeButton.Size = UDim2.new(0, 22, 0, 22)
-MaximizeButton.Font = Enum.Font.GothamBold
-MaximizeButton.Text = "□"
-MaximizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MaximizeButton.TextSize = 10
-MaximizeButton.ZIndex = 5
-
-local MaxCorner = Instance.new("UICorner")
-MaxCorner.CornerRadius = UDim.new(0, 4)
-MaxCorner.Parent = MaximizeButton
-
-local isMaximized = false
-MaximizeButton.MouseButton1Click:Connect(function()
-    isMaximized = not isMaximized
-    if isMaximized then
-        MainFrame.Size = UDim2.new(0, 750, 0, 500)
-    else
-        MainFrame.Size = UDim2.new(0, 550, 0, 350)
-    end
-end)
-
--- Tombol Minimize
-local MinimizeButton = Instance.new("TextButton")
-MinimizeButton.Parent = TopBar
-MinimizeButton.BackgroundColor3 = Color3.fromRGB(220, 180, 40)
-MinimizeButton.BackgroundTransparency = 0.5
-MinimizeButton.Position = UDim2.new(1, -80, 0, 6)
-MinimizeButton.Size = UDim2.new(0, 22, 0, 22)
-MinimizeButton.Font = Enum.Font.GothamBold
-MinimizeButton.Text = "-"
-MinimizeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-MinimizeButton.TextSize = 12
-MinimizeButton.ZIndex = 5
-
-local MinCorner = Instance.new("UICorner")
-MinCorner.CornerRadius = UDim.new(0, 4)
-MinCorner.Parent = MinimizeButton
-
-local isMinimized = false
-MinimizeButton.MouseButton1Click:Connect(function()
-    isMinimized = not isMinimized
-    MainFrame.Visible = not isMinimized
-end)
-
--- Footer Profile Kiri Bawah
-local UserFooter = Instance.new("Frame")
-UserFooter.Parent = MainFrame
-UserFooter.BackgroundColor3 = Color3.fromRGB(20, 24, 33)
-UserFooter.BorderSizePixel = 0
-UserFooter.Position = UDim2.new(0, 8, 1, -35)
-UserFooter.Size = UDim2.new(0, 135, 0, 28)
-
-local UserFooterCorner = Instance.new("UICorner")
-UserFooterCorner.CornerRadius = UDim.new(0, 6)
-UserFooterCorner.Parent = UserFooter
-
-local FooterAvatar = Instance.new("ImageLabel")
-FooterAvatar.Parent = UserFooter
-FooterAvatar.BackgroundTransparency = 1
-FooterAvatar.Position = UDim2.new(0, 4, 0, 4)
-FooterAvatar.Size = UDim2.new(0, 20, 0, 20)
-FooterAvatar.Image = avatarImage
-
-local FooterAvatarCorner = Instance.new("UICorner")
-FooterAvatarCorner.CornerRadius = UDim.new(1, 0)
-FooterAvatarCorner.Parent = FooterAvatar
-
-local UserLabel = Instance.new("TextLabel")
-UserLabel.Parent = UserFooter
-UserLabel.BackgroundTransparency = 1
-UserLabel.Position = UDim2.new(0, 28, 0, 0)
-UserLabel.Size = UDim2.new(1, -30, 1, 0)
-UserLabel.Font = Enum.Font.GothamBold
-UserLabel.Text = "Welcome, " .. LocalPlayer.Name
-UserLabel.TextColor3 = Color3.fromRGB(210, 220, 240)
-UserLabel.TextSize = 9
-UserLabel.TextXAlignment = Enum.TextXAlignment.Left
-UserLabel.TextTruncate = Enum.TextTruncate.AtEnd
-
--- Sidebar Menu Kiri
-local Sidebar = Instance.new("ScrollingFrame")
-Sidebar.Parent = MainFrame
-Sidebar.BackgroundColor3 = Color3.fromRGB(18, 22, 30)
-Sidebar.BorderSizePixel = 0
-Sidebar.Position = UDim2.new(0, 8, 0, 42)
-Sidebar.Size = UDim2.new(0, 135, 1, -85)
-Sidebar.CanvasSize = UDim2.new(0, 0, 0, 350)
-Sidebar.ScrollBarThickness = 1
-
-local UIListSidebar = Instance.new("UIListLayout")
-UIListSidebar.Parent = Sidebar
-UIListSidebar.SortOrder = Enum.SortOrder.LayoutOrder
-UIListSidebar.Padding = UDim.new(0, 3)
-
--- Content Area Kanan
-local ContentArea = Instance.new("ScrollingFrame")
-ContentArea.Parent = MainFrame
-ContentArea.BackgroundColor3 = Color3.fromRGB(18, 22, 30)
-ContentArea.BorderSizePixel = 0
-ContentArea.Position = UDim2.new(0, 147, 0, 42)
-ContentArea.Size = UDim2.new(1, -155, 1, -50)
-ContentArea.CanvasSize = UDim2.new(0, 0, 0, 600)
-ContentArea.ScrollBarThickness = 3
-
-local UIListContent = Instance.new("UIListLayout")
-UIListContent.Parent = ContentArea
-UIListContent.SortOrder = Enum.SortOrder.LayoutOrder
-UIListContent.Padding = UDim.new(0, 5)
-
-local function clearContent()
-    for _, child in ipairs(ContentArea:GetChildren()) do
-        if child:IsA("Frame") then
-            child:Destroy()
-        end
-    end
-end
-
--- Helper Komponen UI Kyzen
-local function addToggleItem(title, callback)
-    local Frame = Instance.new("Frame")
-    Frame.Parent = ContentArea
-    Frame.BackgroundColor3 = Color3.fromRGB(24, 29, 39)
-    Frame.Size = UDim2.new(1, -8, 0, 34)
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 4)
-    Corner.Parent = Frame
-    
-    local Text = Instance.new("TextLabel")
-    Text.Parent = Frame
-    Text.BackgroundTransparency = 1
-    Text.Position = UDim2.new(0, 10, 0, 0)
-    Text.Size = UDim2.new(1, -60, 1, 0)
-    Text.Font = Enum.Font.GothamMedium
-    Text.Text = title
-    Text.TextColor3 = Color3.fromRGB(210, 220, 235)
-    Text.TextSize = 10
-    Text.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local ToggleBtn = Instance.new("TextButton")
-    ToggleBtn.Parent = Frame
-    ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 48, 65)
-    ToggleBtn.Position = UDim2.new(1, -45, 0.5, -10)
-    ToggleBtn.Size = UDim2.new(0, 36, 0, 20)
-    ToggleBtn.Font = Enum.Font.GothamBold
-    ToggleBtn.Text = "OFF"
-    ToggleBtn.TextColor3 = Color3.fromRGB(180, 190, 210)
-    ToggleBtn.TextSize = 9
-    
-    local TCorner = Instance.new("UICorner")
-    TCorner.CornerRadius = UDim.new(1, 0)
-    TCorner.Parent = ToggleBtn
-    
-    local state = false
-    ToggleBtn.MouseButton1Click:Connect(function()
-        state = not state
-        ToggleBtn.Text = state and "ON" or "OFF"
-        ToggleBtn.BackgroundColor3 = state and Color3.fromRGB(60, 180, 90) or Color3.fromRGB(40, 48, 65)
-        if callback then callback(state) end
-    end)
-end
-
-local function addSliderInputItem(title, defaultVal, maxLimit, callback)
-    local Frame = Instance.new("Frame")
-    Frame.Parent = ContentArea
-    Frame.BackgroundColor3 = Color3.fromRGB(24, 29, 39)
-    Frame.Size = UDim2.new(1, -8, 0, 52)
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 4)
-    Corner.Parent = Frame
-    
-    local Text = Instance.new("TextLabel")
-    Text.Parent = Frame
-    Text.BackgroundTransparency = 1
-    Text.Position = UDim2.new(0, 10, 0, 4)
-    Text.Size = UDim2.new(1, -20, 0, 20)
-    Text.Font = Enum.Font.GothamMedium
-    Text.Text = title .. " (Val: " .. tostring(defaultVal) .. ")"
-    Text.TextColor3 = Color3.fromRGB(210, 220, 235)
-    Text.TextSize = 10
-    Text.TextXAlignment = Enum.TextXAlignment.Left
-    
-    local TextBox = Instance.new("TextBox")
-    TextBox.Parent = Frame
-    TextBox.BackgroundColor3 = Color3.fromRGB(35, 42, 58)
-    TextBox.Position = UDim2.new(1, -75, 0, 26)
-    TextBox.Size = UDim2.new(0, 65, 0, 22)
-    TextBox.Font = Enum.Font.Gotham
-    TextBox.Text = tostring(defaultVal)
-    TextBox.TextColor3 = Color3.fromRGB(255, 255, 255)
-    TextBox.TextSize = 10
-    
-    local TB daqui = Instance.new("UICorner")
-    TB daqui.CornerRadius = UDim.new(0, 4)
-    TB daqui.Parent = TextBox
-    
-    TextBox.FocusLost:Connect(function()
-        local num = tonumber(TextBox.Text)
-        if num then
-            Text.Text = title .. " (Val: " .. tostring(num) .. ")"
-            if callback then callback(num) end
-        end
-    end)
-end
-
--- ================= MENU & FITUR KHUSUS KYZEN =================
-local function loadKyzenCategory(catName)
-    clearContent()
-    
-    if catName == "Movement" then
-        addSliderInputItem("Fly Speed", 16, 500, function(v) end)
-        addToggleItem("Fly", function(state) end)
-        addSliderInputItem("WalkSpeed", 16, 500, function(v)
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.WalkSpeed = v
+MoveTab:CreateToggle({
+   Name = "CFrame Fly [ON/OFF]",
+   CurrentValue = false,
+   Flag = "FlyToggle",
+   Callback = function(Value)
+      getgenv().FlyEnabled = Value
+      if Value then
+         local bodyGyro = Instance.new("BodyGyro")
+         local bodyVelocity = Instance.new("BodyVelocity")
+         bodyGyro.P = 9e4
+         bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+         
+         flyConnection = RunService.RenderStepped:Connect(function()
+            if not getgenv().FlyEnabled then 
+               bodyGyro:Destroy()
+               bodyVelocity:Destroy()
+               if flyConnection then flyConnection:Disconnect() end
+               return 
             end
-        end)
-        addSliderInputItem("Tp Walk", 16, 500, function(v) end)
-        addSliderInputItem("Moon Walk", 16, 500, function(v) end)
-        addSliderInputItem("Spider Climb Speed", 16, 50, function(v) end)
-        addSliderInputItem("Jump Power", 50, 500, function(v)
-            if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-                LocalPlayer.Character.Humanoid.JumpPower = v
+            
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+               local hrp = char.HumanoidRootPart
+               bodyGyro.CFrame = Camera.CFrame
+               bodyVelocity.velocity = Vector3.new(0, 0, 0)
+               
+               local moveDir = char.Humanoid.MoveDirection
+               hrp.CFrame = hrp.CFrame + (Camera.CFrame.LookVector * moveDir.Z * (getgenv().FlySpeed / 10)) + (Camera.CFrame.RightVector * moveDir.X * (getgenv().FlySpeed / 10))
             end
-        end)
-        addToggleItem("Inf Jump", function(state) end)
-        addToggleItem("No Clip", function(state) end)
-        addToggleItem("Shift Lock Force", function(state) end)
-        addToggleItem("No Slow", function(state) end)
-        addToggleItem("Bunny Hop", function(state) end)
+         end)
+      end
+   end,
+})
 
-    elseif catName == "Visual / ESP" then
-        addToggleItem("Player ESP", function(state) end)
-        addToggleItem("Skeleton ESP", function(state) end)
-        addToggleItem("Item / Egg / NPC ESP", function(state) end)
-        addToggleItem("Tracers", function(state) end)
-        addSliderInputItem("Hitbox Expander", 5, 50, function(v) end)
-        addToggleItem("FullBright", function(state) end)
-        addToggleItem("X-Ray", function(state) end)
-        addSliderInputItem("FOV Changer", 70, 120, function(v)
-            workspace.CurrentCamera.FieldOfView = v
-        end)
-        addToggleItem("Freecam", function(state) end)
+MoveTab:CreateInput({
+   Name = "CFrame Fly Speed (Ketik Angka / No Limit)",
+   PlaceholderText = "Contoh: 50, 100, 500...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then getgenv().FlySpeed = num end
+   end,
+})
 
-    elseif catName == "World / Grafik" then
-        addSliderInputItem("Brightness Slider", 1, 20, function(v)
-            Lighting.Brightness = v
-        end)
-        addToggleItem("Anti Lag / FPS Boost", function(state) end)
-        addToggleItem("Ghost Other Player", function(state) end)
-        addToggleItem("Invisible Self", function(state) end)
-        addToggleItem("Ghost Mode", function(state) end)
+-- 2. Walk Speed
+getgenv().WalkSpeedEnabled = false
+getgenv().CustomWalkSpeed = 50
 
-    elseif catName == "System / Server" then
-        addToggleItem("Anti AFK", function(state) end)
-        addToggleItem("Anti Kick", function(state) end)
-        addToggleItem("Anti Rejoin", function(state) end)
-        addToggleItem("Copy Avatar", function(state) end)
-        addToggleItem("Save Settingan", function(state) end)
-        addToggleItem("Playtime Counter", function(state) end)
-        addToggleItem("Ping / FPS Live", function(state) end)
+MoveTab:CreateToggle({
+   Name = "Walk Speed Boost [ON/OFF]",
+   CurrentValue = false,
+   Flag = "SpeedToggle",
+   Callback = function(Value)
+      getgenv().WalkSpeedEnabled = Value
+      if not Value and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+         LocalPlayer.Character.Humanoid.WalkSpeed = 16
+      end
+   end,
+})
 
-    elseif catName == "Teleport" then
-        addToggleItem("List Player", function(state) end)
-        addToggleItem("Refresh List Player", function(state) end)
-        addToggleItem("Teleport to Player", function(state) end)
-        addToggleItem("Save And Teleport (Slot 1-5)", function(state) end)
-        addToggleItem("Save And Run (Slot 1-5)", function(state) end)
+MoveTab:CreateInput({
+   Name = "Walk Speed (Ketik Angka / No Limit)",
+   PlaceholderText = "Ketik angka speed...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then
+         getgenv().CustomWalkSpeed = num
+         if getgenv().WalkSpeedEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = num
+         end
+      end
+   end,
+})
 
-    elseif catName == "UI Ky Hub" then
-        addToggleItem("UI Transparansi Slider", function(state)
-            MainFrame.BackgroundTransparency = state and 0.2 or 0
-        end)
-        addToggleItem("Disable Background Image", function(state) end)
-        addToggleItem("Animated Window", function(state) end)
-        
-        -- Tombol Teks Promosi Aman (Tanpa fungsi setclipboard yang bikin error)
-        local PromoBtn = Instance.new("TextButton")
-        PromoBtn.Parent = ContentArea
-        PromoBtn.BackgroundColor3 = Color3.fromRGB(60, 90, 160)
-        PromoBtn.Size = UDim2.new(1, -8, 0, 32)
-        PromoBtn.Font = Enum.Font.GothamBold
-        PromoBtn.Text = "TikTok: javanese7283"
-        PromoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        PromoBtn.TextSize = 10
+-- 3. TP Walk
+getgenv().TPWalkEnabled = false
+getgenv().TPWalkSpeed = 20
 
-    elseif catName == "Extra Features" then
-        addToggleItem("Hand Cursor Helper", function(state) end)
-        addToggleItem("Spectate Player", function(state) end)
-        addToggleItem("Zoom Unlock", function(state) end)
-        addToggleItem("Chams", function(state) end)
-        addToggleItem("Dash", function(state) end)
-        addToggleItem("Wall Hack", function(state) end)
-    end
-    
-    ContentArea.CanvasSize = UDim2.new(0, 0, 0, (#ContentArea:GetChildren() * 42))
-end
+RunService.RenderStepped:Connect(function()
+   if getgenv().TPWalkEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      local humanoid = LocalPlayer.Character.Humanoid
+      local hrp = LocalPlayer.Character.HumanoidRootPart
+      if humanoid.MoveDirection.Magnitude > 0 then
+         hrp.CFrame = hrp.CFrame + (humanoid.MoveDirection * (getgenv().TPWalkSpeed / 50))
+      end
+   end
+end)
 
--- Daftar Menu Laci Kiri
-local function createSidebarButton(name, order)
-    local Btn = Instance.new("TextButton")
-    Btn.Parent = Sidebar
-    Btn.BackgroundColor3 = Color3.fromRGB(22, 27, 36)
-    Btn.Size = UDim2.new(1, -6, 0, 28)
-    Btn.Font = Enum.Font.GothamMedium
-    Btn.Text = "  " .. name
-    Btn.TextColor3 = Color3.fromRGB(180, 190, 210)
-    Btn.TextSize = 10
-    Btn.TextXAlignment = Enum.TextXAlignment.Left
-    Btn.LayoutOrder = order
-    
-    local Corner = Instance.new("UICorner")
-    Corner.CornerRadius = UDim.new(0, 4)
-    Corner.Parent = Btn
-    
-    Btn.MouseButton1Click:Connect(function()
-        loadKyzenCategory(name)
-    end)
-end
+MoveTab:CreateToggle({
+   Name = "TP Walk [ON/OFF]",
+   CurrentValue = false,
+   Flag = "TPWalkToggle",
+   Callback = function(Value)
+      getgenv().TPWalkEnabled = Value
+   end,
+})
 
-createSidebarButton("Movement", 1)
-createSidebarButton("Visual / ESP", 2)
-createSidebarButton("World / Grafik", 3)
-createSidebarButton("System / Server", 4)
-createSidebarButton("Teleport", 5)
-createSidebarButton("UI Ky Hub", 6)
-createSidebarButton("Extra Features", 7)
+MoveTab:CreateInput({
+   Name = "TP Walk Speed (Ketik Angka / No Limit)",
+   PlaceholderText = "Ketik angka TP speed...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then getgenv().TPWalkSpeed = num end
+   end,
+})
 
--- Default Buka Kategori Pertama
-loadKyzenCategory("Movement")
+-- 4. Moon Walk
+getgenv().MoonWalkEnabled = false
+getgenv().MoonWalkGravity = 30
+
+MoveTab:CreateToggle({
+   Name = "Moon Walk [ON/OFF]",
+   CurrentValue = false,
+   Flag = "MoonWalkToggle",
+   Callback = function(Value)
+      getgenv().MoonWalkEnabled = Value
+      if Value then
+         Workspace.Gravity = getgenv().MoonWalkGravity
+      else
+         Workspace.Gravity = 196.2
+      end
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "Moon Walk Gravity (Ketik Angka / Semakin kecil makin melayang)",
+   PlaceholderText = "Contoh: 30, 10, 5...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then
+         getgenv().MoonWalkGravity = num
+         if getgenv().MoonWalkEnabled then
+            Workspace.Gravity = num
+         end
+      end
+   end,
+})
+
+-- 5. Spider Climb
+getgenv().SpiderEnabled = false
+RunService.Stepped:Connect(function()
+   if getgenv().SpiderEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      local hrp = LocalPlayer.Character.HumanoidRootPart
+      local ray = Ray.new(hrp.Position, hrp.CFrame.LookVector * 2)
+      local hit = Workspace:FindPartOnRay(ray, LocalPlayer.Character)
+      if hit then
+         hrp.Velocity = Vector3.new(hrp.Velocity.X, 50, hrp.Velocity.Z)
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Spider Climb [ON/OFF]",
+   CurrentValue = false,
+   Flag = "SpiderToggle",
+   Callback = function(Value)
+      getgenv().SpiderEnabled = Value
+   end,
+})
+
+-- 6. Jump Power & Inf Jump
+getgenv().JumpPowerEnabled = false
+
+MoveTab:CreateToggle({
+   Name = "Custom Jump Power [ON/OFF]",
+   CurrentValue = false,
+   Flag = "JumpToggle",
+   Callback = function(Value)
+      getgenv().JumpPowerEnabled = Value
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "Jump Power Value (Ketik Angka / No Limit)",
+   PlaceholderText = "Contoh: 100, 300...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+         LocalPlayer.Character.Humanoid.JumpPower = num
+         LocalPlayer.Character.Humanoid.UseJumpPower = true
+      end
+   end,
+})
+
+getgenv().InfJumpEnabled = false
+UserInputService.JumpRequest:Connect(function()
+   if getgenv().InfJumpEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Inf Jump [ON/OFF]",
+   CurrentValue = false,
+   Flag = "InfJumpToggle",
+   Callback = function(Value)
+      getgenv().InfJumpEnabled = Value
+   end,
+})
+
+-- 7. No Clip
+getgenv().NoClipEnabled = false
+RunService.Stepped:Connect(function()
+   if getgenv().NoClipEnabled and LocalPlayer.Character then
+      for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+         if part:IsA("BasePart") then
+            part.CanCollide = false
+         end
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "No Clip [ON/OFF]",
+   CurrentValue = false,
+   Flag = "NoClipToggle",
+   Callback = function(Value)
+      getgenv().NoClipEnabled = Value
+   end,
+})
+
+-- 8. Shift Lock Force
+getgenv().ShiftLockForced = false
+RunService.RenderStepped:Connect(function()
+   if getgenv().ShiftLockForced then
+      LocalPlayer.DevEnableMouseLock = true
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Shift Lock Force [ON/OFF]",
+   CurrentValue = false,
+   Flag = "ShiftLockToggle",
+   Callback = function(Value)
+      getgenv().ShiftLockForced = Value
+   end,
+})
+
+-- 9. No Slow
+getgenv().NoSlowEnabled = false
+RunService.Stepped:Connect(function()
+   if getgenv().NoSlowEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().WalkSpeedEnabled and getgenv().CustomWalkSpeed or 16
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "No Slow [ON/OFF]",
+   CurrentValue = false,
+   Flag = "NoSlowToggle",
+   Callback = function(Value)
+      getgenv().NoSlowEnabled = Value
+   end,
+})
+
+-- 10. Bunny Hop
+getgenv().BunnyHopEnabled = false
+RunService.RenderStepped:Connect(function()
+   if getgenv().BunnyHopEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      local humanoid = LocalPlayer.Character.Humanoid
+      if humanoid.FloorMaterial ~= Enum.Material.Air then
+         humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Bunny Hop [ON/OFF]",
+   CurrentValue = false,
+   Flag = "BunnyHopToggle",
+   Callback = function(Value)
+      getgenv().BunnyHopEnabled = Value
+   end,
+})
+
+Rayfield:Notify({
+   Title = "Menu Movement Siap!",
+   Content = "Semua fitur movement sudah diperbaiki dengan sistem On/Off dan Input angka.",
+   Duration = 5,
+})
