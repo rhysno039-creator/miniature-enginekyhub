@@ -1,0 +1,396 @@
+-- =====================================================================
+-- KYZEN HUB v2 - ADVANCED MOVEMENT MENU (Final Absolute Fix)
+-- =====================================================================
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+local Window = Rayfield:CreateWindow({
+   Name = "KYZEN HUB v2 | Advanced Movement",
+   LoadingTitle = "KYZEN HUB",
+   LoadingSubtitle = "Elite Movement Module",
+   ConfigurationSaving = { Enabled = false }
+})
+
+local MoveTab = Window:CreateTab("Movement", 4483345998)
+
+-- ==========================================
+-- SECTION: FLIGHT & SPEED
+-- ==========================================
+MoveTab:CreateSection("Flight & Speed Control")
+
+getgenv().AeroFlyActive = false
+getgenv().AeroFlySpeed = 50
+local flyConnection
+
+MoveTab:CreateToggle({
+   Name = "Aero Flight",
+   CurrentValue = false,
+   Flag = "AeroFlyToggle",
+   Callback = function(Value)
+      getgenv().AeroFlyActive = Value
+      local char = LocalPlayer.Character
+      if not char then return end
+      local hrp = char:FindFirstChild("HumanoidRootPart")
+      local humanoid = char:FindFirstChild("Humanoid")
+      
+      if Value then
+         if humanoid then humanoid.PlatformStand = true end
+         if hrp then
+            local bv = Instance.new("BodyVelocity")
+            bv.Name = "KyzenFlyVelocity"
+            bv.Parent = hrp
+            bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+            bv.Velocity = Vector3.new(0, 0, 0)
+            
+            local bg = Instance.new("BodyGyro")
+            bg.Name = "KyzenFlyGyro"
+            bg.Parent = hrp
+            bg.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
+            bg.CFrame = hrp.CFrame
+            
+            flyConnection = RunService.RenderStepped:Connect(function()
+               if not getgenv().AeroFlyActive then
+                  if bv then bv:Destroy() end
+                  if bg then bg:Destroy() end
+                  if humanoid then humanoid.PlatformStand = false end
+                  if flyConnection then flyConnection:Disconnect() end
+                  return
+               end
+               
+               if hrp and Camera then
+                  bg.CFrame = Camera.CFrame
+                  local moveDir = Vector3.new(0, 0, 0)
+                  
+                  -- Mengembalikan arah analog maju ke posisi semula (Z < 0 untuk maju)
+                  if UserInputService:IsKeyDown(Enum.KeyCode.W) or humanoid.MoveDirection.Z < 0 then
+                     moveDir = moveDir + (Camera.CFrame.LookVector)
+                  end
+                  if UserInputService:IsKeyDown(Enum.KeyCode.S) or humanoid.MoveDirection.Z > 0 then
+                     moveDir = moveDir - (Camera.CFrame.LookVector)
+                  end
+                  if UserInputService:IsKeyDown(Enum.KeyCode.D) or humanoid.MoveDirection.X > 0 then
+                     moveDir = moveDir + (Camera.CFrame.RightVector)
+                  end
+                  if UserInputService:IsKeyDown(Enum.KeyCode.A) or humanoid.MoveDirection.X < 0 then
+                     moveDir = moveDir - (Camera.CFrame.RightVector)
+                  end
+                  
+                  bv.Velocity = moveDir * getgenv().AeroFlySpeed
+               end
+            end)
+         end
+      else
+         if humanoid then humanoid.PlatformStand = false end
+         if hrp then
+            if hrp:FindFirstChild("KyzenFlyVelocity") then hrp.KyzenFlyVelocity:Destroy() end
+            if hrp:FindFirstChild("KyzenFlyGyro") then hrp.KyzenFlyGyro:Destroy() end
+         end
+         if flyConnection then flyConnection:Disconnect() end
+      end
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "Flight Velocity",
+   PlaceholderText = "Masukkan kecepatan...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then getgenv().AeroFlySpeed = num end
+   end,
+})
+
+getgenv().VelocityBoostActive = false
+getgenv().VelocityBoostSpeed = 16
+
+RunService.Heartbeat:Connect(function()
+   if getgenv().VelocityBoostActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().VelocityBoostSpeed
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Velocity Sprint",
+   CurrentValue = false,
+   Flag = "SpeedToggle",
+   Callback = function(Value)
+      getgenv().VelocityBoostActive = Value
+      if not Value and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+         LocalPlayer.Character.Humanoid.WalkSpeed = 16
+      end
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "Sprint Multiplier",
+   PlaceholderText = "Masukkan kecepatan...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then getgenv().VelocityBoostSpeed = num end
+   end,
+})
+
+-- ==========================================
+-- SECTION: WALKING & MOVEMENT MODES
+-- ==========================================
+MoveTab:CreateSection("Special Movement Modes")
+
+getgenv().PhaseWalkActive = false
+getgenv().PhaseWalkSpeed = 20
+
+RunService.RenderStepped:Connect(function()
+   if getgenv().PhaseWalkActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      local humanoid = LocalPlayer.Character.Humanoid
+      local hrp = LocalPlayer.Character.HumanoidRootPart
+      if humanoid.MoveDirection.Magnitude > 0 then
+         hrp.CFrame = hrp.CFrame + (humanoid.MoveDirection * (getgenv().PhaseWalkSpeed / 50))
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Phase Walk",
+   CurrentValue = false,
+   Flag = "TPWalkToggle",
+   Callback = function(Value)
+      getgenv().PhaseWalkActive = Value
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "Phase Walk Velocity",
+   PlaceholderText = "Masukkan kecepatan...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then getgenv().PhaseWalkSpeed = num end
+   end,
+})
+
+getgenv().LowGravityActive = false
+getgenv().LowGravityValue = 30
+
+MoveTab:CreateToggle({
+   Name = "Zero-G Levitation",
+   CurrentValue = false,
+   Flag = "MoonWalkToggle",
+   Callback = function(Value)
+      getgenv().LowGravityActive = Value
+      if Value then
+         Workspace.Gravity = getgenv().LowGravityValue
+      else
+         Workspace.Gravity = 196.2
+      end
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "Gravity Scale",
+   PlaceholderText = "Contoh: 30, 10...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then
+         getgenv().LowGravityValue = num
+         if getgenv().LowGravityActive then
+            Workspace.Gravity = num
+         end
+      end
+   end,
+})
+
+getgenv().WallClimbActive = false
+RunService.Stepped:Connect(function()
+   if getgenv().WallClimbActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      local hrp = LocalPlayer.Character.HumanoidRootPart
+      local raycastParams = RaycastParams.new()
+      raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+      raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+      
+      local raycastResult = Workspace:Raycast(hrp.Position, hrp.CFrame.LookVector * 3, raycastParams)
+      if raycastResult and raycastResult.Instance then
+         hrp.Velocity = Vector3.new(hrp.Velocity.X, 60, hrp.Velocity.Z)
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Surface Vertical Climb",
+   CurrentValue = false,
+   Flag = "SpiderToggle",
+   Callback = function(Value)
+      getgenv().WallClimbActive = Value
+   end,
+})
+
+-- ==========================================
+-- SECTION: JUMP & UTILITIES
+-- ==========================================
+MoveTab:CreateSection("Jump & Utilities")
+
+getgenv().CustomJumpActive = false
+
+MoveTab:CreateToggle({
+   Name = "Enhanced Jump Power",
+   CurrentValue = false,
+   Flag = "JumpToggle",
+   Callback = function(Value)
+      getgenv().CustomJumpActive = Value
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "Jump Power Value",
+   PlaceholderText = "Masukkan power...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+         LocalPlayer.Character.Humanoid.JumpPower = num
+         LocalPlayer.Character.Humanoid.UseJumpPower = true
+      end
+   end,
+})
+
+getgenv().InfiniteAirJump = false
+UserInputService.JumpRequest:Connect(function()
+   if getgenv().InfiniteAirJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Infinite Air Jump",
+   CurrentValue = false,
+   Flag = "InfJumpToggle",
+   Callback = function(Value)
+      getgenv().InfiniteAirJump = Value
+   end,
+})
+
+getgenv().HyperBunnyHop = false
+RunService.RenderStepped:Connect(function()
+   if getgenv().HyperBunnyHop and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Hyper Bunny Hop",
+   CurrentValue = false,
+   Flag = "BunnyHopToggle",
+   Callback = function(Value)
+      getgenv().HyperBunnyHop = Value
+   end,
+})
+
+getgenv().GhostModeActive = false
+RunService.Stepped:Connect(function()
+   if getgenv().GhostModeActive and LocalPlayer.Character then
+      for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+         if part:IsA("BasePart") then
+            part.CanCollide = false
+         end
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Ghost Phase",
+   CurrentValue = false,
+   Flag = "NoClipToggle",
+   Callback = function(Value)
+      getgenv().GhostModeActive = Value
+   end,
+})
+
+-- Sistem Forced Camera Lock (Shift Lock Murni Berbasis RenderStepped untuk HP)
+getgenv().ForcedShiftLock = false
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "KyzenShiftLockGUI"
+screenGui.Parent = game:GetService("CoreGui")
+screenGui.Enabled = false
+
+local shiftLockBtn = Instance.new("TextButton")
+shiftLockBtn.Size = UDim2.new(0, 50, 0, 50)
+shiftLockBtn.Position = UDim2.new(0.85, 0, 0.45, 0)
+shiftLockBtn.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+shiftLockBtn.BackgroundTransparency = 0.5
+shiftLockBtn.Text = "🔒"
+shiftLockBtn.TextSize = 22
+shiftLockBtn.Parent = screenGui
+
+local isLocked = false
+shiftLockBtn.MouseButton1Click:Connect(function()
+   isLocked = not isLocked
+   if isLocked then
+      shiftLockBtn.BackgroundTransparency = 0.1
+   else
+      shiftLockBtn.BackgroundTransparency = 0.5
+   end
+end)
+
+RunService.RenderStepped:Connect(function()
+   if getgenv().ForcedShiftLock then
+      screenGui.Enabled = true
+      local char = LocalPlayer.Character
+      if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+         local hrp = char.HumanoidRootPart
+         local humanoid = char.Humanoid
+         
+         if isLocked then
+            -- Memaksa badan karakter selalu menghadap ke arah kamera secara mutlak
+            local camCF = Camera.CFrame
+            hrp.CFrame = CFrame.new(hrp.Position, Vector3.new(camCF.LookVector.X * 9999, hrp.Position.Y, camCF.LookVector.Z * 9999))
+            humanoid.AutoRotate = false
+         else
+            humanoid.AutoRotate = true
+         end
+      end
+   else
+      screenGui.Enabled = false
+      isLocked = false
+      local char = LocalPlayer.Character
+      if char and char:FindFirstChild("Humanoid") then
+         char.Humanoid.AutoRotate = true
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Forced Camera Lock",
+   CurrentValue = false,
+   Flag = "ShiftLockToggle",
+   Callback = function(Value)
+      getgenv().ForcedShiftLock = Value
+   end,
+})
+
+getgenv().StatusImmunityActive = false
+RunService.Stepped:Connect(function()
+   if getgenv().StatusImmunityActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().VelocityBoostActive and getgenv().VelocityBoostSpeed or 16
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "Status Immunity",
+   CurrentValue = false,
+   Flag = "NoSlowToggle",
+   Callback = function(Value)
+      getgenv().StatusImmunityActive = Value
+   end,
+})
+
+Rayfield:Notify({
+   Title = "Perbaikan Final Berhasil!",
+   Content = "Arah analog Fly dan sistem kunci kamera (Shift Lock) telah diperbarui total.",
+   Duration = 5,
+})
