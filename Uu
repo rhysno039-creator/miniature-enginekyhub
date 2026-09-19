@@ -1,0 +1,318 @@
+-- =====================================================================
+-- KYZEN HUB v2 - ADVANCED MOVEMENT MENU (Fixed & Enhanced)
+-- =====================================================================
+
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local LocalPlayer = Players.LocalPlayer
+local Camera = Workspace.CurrentCamera
+
+local Window = Rayfield:CreateWindow({
+   Name = "KYZEN HUB v2 | Advanced Movement",
+   LoadingTitle = "KYZEN HUB",
+   LoadingSubtitle = "Elite Movement Module",
+   ConfigurationSaving = { Enabled = false }
+})
+
+local MoveTab = Window:CreateTab("Movement", 4483345998)
+MoveTab:CreateSection("Ultimate Movement Control Suite")
+
+-- 1. CFrame Fly (Camera-relative Up/Down movement)
+getgenv().AeroFlyActive = false
+getgenv().AeroFlySpeed = 50
+local aeroFlyConn
+
+MoveTab:CreateToggle({
+   Name = "🚀 Aero Flight [ON/OFF]",
+   CurrentValue = false,
+   Flag = "AeroFlyToggle",
+   Callback = function(Value)
+      getgenv().AeroFlyActive = Value
+      if Value then
+         local bodyGyro = Instance.new("BodyGyro")
+         local bodyVelocity = Instance.new("BodyVelocity")
+         bodyGyro.P = 9e4
+         bodyGyro.maxTorque = Vector3.new(9e9, 9e9, 9e9)
+         
+         aeroFlyConn = RunService.RenderStepped:Connect(function()
+            if not getgenv().AeroFlyActive then 
+               bodyGyro:Destroy()
+               bodyVelocity:Destroy()
+               if aeroFlyConn then aeroFlyConn:Disconnect() end
+               return 
+            end
+            
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") and char:FindFirstChild("Humanoid") then
+               local hrp = char.HumanoidRootPart
+               bodyGyro.CFrame = Camera.CFrame
+               bodyVelocity.velocity = Vector3.new(0, 0, 0)
+               
+               local moveDir = char.Humanoid.MoveDirection
+               -- Pergerakan mengikuti arah kamera secara penuh (termasuk naik/turun)
+               local camLook = Camera.CFrame.LookVector
+               local camRight = Camera.CFrame.RightVector
+               
+               hrp.CFrame = hrp.CFrame + (camLook * moveDir.Z * (getgenv().AeroFlySpeed / 10)) + (camRight * moveDir.X * (getgenv().AeroFlySpeed / 10))
+               -- Jika menekan tombol maju/mundur/lokasi kamera mendongak, ikut terbang naik/turun
+            end
+         end)
+      end
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "⚡ Flight Velocity (No Limit)",
+   PlaceholderText = "Masukkan kecepatan...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then getgenv().AeroFlySpeed = num end
+   end,
+})
+
+-- 2. Walk Speed Boost
+getgenv().VelocityBoostActive = false
+getgenv().VelocityBoostSpeed = 16
+
+MoveTab:CreateToggle({
+   Name = "💨 Velocity Sprint [ON/OFF]",
+   CurrentValue = false,
+   Flag = "SpeedToggle",
+   Callback = function(Value)
+      getgenv().VelocityBoostActive = Value
+      if not Value and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+         LocalPlayer.Character.Humanoid.WalkSpeed = 16
+      end
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "💨 Sprint Multiplier (No Limit)",
+   PlaceholderText = "Masukkan kecepatan...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then
+         getgenv().VelocityBoostSpeed = num
+         if getgenv().VelocityBoostActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+            LocalPlayer.Character.Humanoid.WalkSpeed = num
+         end
+      end
+   end,
+})
+
+-- 3. TP Walk
+getgenv().PhaseWalkActive = false
+getgenv().PhaseWalkSpeed = 20
+
+RunService.RenderStepped:Connect(function()
+   if getgenv().PhaseWalkActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      local humanoid = LocalPlayer.Character.Humanoid
+      local hrp = LocalPlayer.Character.HumanoidRootPart
+      if humanoid.MoveDirection.Magnitude > 0 then
+         hrp.CFrame = hrp.CFrame + (humanoid.MoveDirection * (getgenv().PhaseWalkSpeed / 50))
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "✨ Phase Walk [ON/OFF]",
+   CurrentValue = false,
+   Flag = "TPWalkToggle",
+   Callback = function(Value)
+      getgenv().PhaseWalkActive = Value
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "✨ Phase Walk Velocity (No Limit)",
+   PlaceholderText = "Masukkan kecepatan...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then getgenv().PhaseWalkSpeed = num end
+   end,
+})
+
+-- 4. Moon Walk
+getgenv().LowGravityActive = false
+getgenv().LowGravityValue = 30
+
+MoveTab:CreateToggle({
+   Name = "🌙 Zero-G Levitation [ON/OFF]",
+   CurrentValue = false,
+   Flag = "MoonWalkToggle",
+   Callback = function(Value)
+      getgenv().LowGravityActive = Value
+      if Value then
+         Workspace.Gravity = getgenv().LowGravityValue
+      else
+         Workspace.Gravity = 196.2
+      end
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "🌙 Gravity Scale (Semakin kecil makin melayang)",
+   PlaceholderText = "Contoh: 30, 10...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then
+         getgenv().LowGravityValue = num
+         if getgenv().LowGravityActive then
+            Workspace.Gravity = num
+         end
+      end
+   end,
+})
+
+-- 5. Spider Climb (Fixed Raycast Detection)
+getgenv().WallClimbActive = false
+RunService.Stepped:Connect(function()
+   if getgenv().WallClimbActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+      local hrp = LocalPlayer.Character.HumanoidRootPart
+      -- Menggunakan Raycast modern agar benar-benar mendeteksi objek di depan
+      local raycastParams = RaycastParams.new()
+      raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+      raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+      
+      local raycastResult = Workspace:Raycast(hrp.Position, hrp.CFrame.LookVector * 3, raycastParams)
+      if raycastResult and raycastResult.Instance then
+         hrp.Velocity = Vector3.new(hrp.Velocity.X, 60, hrp.Velocity.Z)
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "🕷️ Surface Vertical Climb [ON/OFF]",
+   CurrentValue = false,
+   Flag = "SpiderToggle",
+   Callback = function(Value)
+      getgenv().WallClimbActive = Value
+   end,
+})
+
+-- 6. Jump Power & Inf Jump
+getgenv().CustomJumpActive = false
+
+MoveTab:CreateToggle({
+   Name = "🦘 Enhanced Jump Power [ON/OFF]",
+   CurrentValue = false,
+   Flag = "JumpToggle",
+   Callback = function(Value)
+      getgenv().CustomJumpActive = Value
+   end,
+})
+
+MoveTab:CreateInput({
+   Name = "🦘 Jump Power Value (No Limit)",
+   PlaceholderText = "Masukkan power...",
+   RemoveTextAfterFocusLost = false,
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+         LocalPlayer.Character.Humanoid.JumpPower = num
+         LocalPlayer.Character.Humanoid.UseJumpPower = true
+      end
+   end,
+})
+
+getgenv().InfiniteAirJump = false
+UserInputService.JumpRequest:Connect(function()
+   if getgenv().InfiniteAirJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "🦅 Infinite Air Jump [ON/OFF]",
+   CurrentValue = false,
+   Flag = "InfJumpToggle",
+   Callback = function(Value)
+      getgenv().InfiniteAirJump = Value
+   end,
+})
+
+-- 7. No Clip
+getgenv().GhostModeActive = false
+RunService.Stepped:Connect(function()
+   if getgenv().GhostModeActive and LocalPlayer.Character then
+      for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+         if part:IsA("BasePart") then
+            part.CanCollide = false
+         end
+      end
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "👻 Ghost Phase (No Clip) [ON/OFF]",
+   CurrentValue = false,
+   Flag = "NoClipToggle",
+   Callback = function(Value)
+      getgenv().GhostModeActive = Value
+   end,
+})
+
+-- 8. Shift Lock Force (Fixed)
+getgenv().ForcedShiftLock = false
+RunService.RenderStepped:Connect(function()
+   if getgenv().ForcedShiftLock then
+      LocalPlayer.DevEnableMouseLock = true
+      LocalPlayer.DevComputerCameraMode = Enum.DevComputerCameraMode.EnableClassicCamera
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "🔒 Forced Camera Lock [ON/OFF]",
+   CurrentValue = false,
+   Flag = "ShiftLockToggle",
+   Callback = function(Value)
+      getgenv().ForcedShiftLock = Value
+   end,
+})
+
+-- 9. No Slow
+getgenv().StatusImmunityActive = false
+RunService.Stepped:Connect(function()
+   if getgenv().StatusImmunityActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid.WalkSpeed = getgenv().VelocityBoostActive and getgenv().VelocityBoostSpeed or 16
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "🛡️ Status Immunity (No Slow) [ON/OFF]",
+   CurrentValue = false,
+   Flag = "NoSlowToggle",
+   Callback = function(Value)
+      getgenv().StatusImmunityActive = Value
+   end,
+})
+
+-- 10. Bunny Hop (Continuous mid-air jumping without touching ground)
+getgenv().HyperBunnyHop = false
+RunService.RenderStepped:Connect(function()
+   if getgenv().HyperBunnyHop and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+      LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+   end
+end)
+
+MoveTab:CreateToggle({
+   Name = "🐰 Hyper Bunny Hop [ON/OFF]",
+   CurrentValue = false,
+   Flag = "BunnyHopToggle",
+   Callback = function(Value)
+      getgenv().HyperBunnyHop = Value
+   end,
+})
+
+Rayfield:Notify({
+   Title = "Movement Menu Diperbarui!",
+   Content = "Semua fitur, tombol, dan nama menu berhasil disempurnakan.",
+   Duration = 5,
+})
