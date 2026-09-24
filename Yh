@@ -1,0 +1,511 @@
+-- =================================================================
+-- TEMPLATE UI KYZEN HUB - LENGKAP DENGAN FITUR PLAYER BARU & SETTING
+-- Tanpa Search, Tanpa Laci, Langsung ke Home
+-- =================================================================
+
+-- Memuat WindUI Library dengan Aman
+local success, WindUI = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+end)
+
+if not success or not WindUI then
+    warn("WindUI gagal dimuat!")
+    return
+end
+
+-- Layanan Roblox
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    Humanoid = newChar:WaitForChild("Humanoid")
+    HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+end)
+
+-- Mendapatkan info executor aman
+local executorName = "Unknown"
+pcall(function()
+    if identifyexecutor then executorName = identifyexecutor()
+    elseif getexecutorname then executorName = getexecutorname() end
+end)
+
+-- Membuat Window Utama
+local Window = WindUI:CreateWindow({
+    Title = "KyZen Hub Template",
+    Icon = "rbxassetid://10709791437",
+    Author = "kyzen868",
+    Folder = "KyZenHubTemplate",
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 200,
+    HasOutline = true
+})
+
+-- =================================================================
+-- MEMBUAT SEMUA TAB / MENU
+-- =================================================================
+local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })         -- Index 1
+local PlayerTab = Window:Tab({ Title = "PLAYER", Icon = "user" })     -- Index 2
+local VisualTab = Window:Tab({ Title = "Visual", Icon = "eye" })     -- Index 3
+local EspTab = Window:Tab({ Title = "Esp", Icon = "target" })         -- Index 4
+local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map-pin" }) -- Index 5
+local CombatTab = Window:Tab({ Title = "Combat", Icon = "sword" })     -- Index 6
+local MovemendTab = Window:Tab({ Title = "Movemend", Icon = "activity" }) -- Index 7
+local CframeTab = Window:Tab({ Title = "Cframe", Icon = "box" })       -- Index 8
+local WorldTab = Window:Tab({ Title = "World", Icon = "globe" })       -- Index 9
+local TrollFETab = Window:Tab({ Title = "Troll FE", Icon = "smile" })  -- Index 10
+local UntylitTab = Window:Tab({ Title = "Untylit", Icon = "tool" })     -- Index 11
+local SettingTab = Window:Tab({ Title = "Setting", Icon = "settings" }) -- Index 12
+
+
+-- =================================================================
+-- 1. ISI TAB HOME (Informasi, Kontrol Server, & Tautan Komunitas)
+-- =================================================================
+HomeTab:Section({ Title = "User & Performance Info" })
+
+HomeTab:Paragraph({
+    Title = "Player & System Status",
+    Desc = string.format("Username: %s\nDisplayName: %s\nUser ID: %d\nExecutor: %s", 
+        LocalPlayer.Name, 
+        LocalPlayer.DisplayName, 
+        LocalPlayer.UserId, 
+        executorName
+    )
+})
+
+local StatsParagraph = HomeTab:Paragraph({
+    Title = "Live Counter",
+    Desc = "FPS: Calculating...\nPing: Calculating...\nServer Time: Calculating..."
+})
+
+-- Loop Counter Real-time untuk FPS, Ping, dan Waktu Server
+task.spawn(function()
+    local lastTick = tick()
+    local frameCount = 0
+    local fps = 0
+
+    RunService.RenderStepped:Connect(function()
+        frameCount = frameCount + 1
+        if tick() - lastTick >= 1 then
+            fps = frameCount
+            frameCount = 0
+            lastTick = tick()
+        end
+    end)
+
+    while task.wait(1) do
+        local pingVal = 0
+        pcall(function()
+            if LocalPlayer.GetNetworkPing then
+                pingVal = math.floor(LocalPlayer:GetNetworkPing() * 1000)
+            end
+        end)
+        local serverTime = os.date("%I:%M:%S %p")
+
+        pcall(function()
+            StatsParagraph:SetDesc(string.format("FPS: %d\nPing: %d ms\nServer Time: %s", fps, pingVal, serverTime))
+        end)
+    end
+end)
+
+HomeTab:Section({ Title = "Server Control" })
+
+HomeTab:Button({
+    Title = "Rejoin Server",
+    Desc = "Bergabung kembali ke server saat ini",
+    Callback = function()
+        pcall(function()
+            TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
+        end)
+    end
+})
+
+HomeTab:Button({
+    Title = "Server Hop",
+    Desc = "Pindah ke server publik lain secara acak",
+    Callback = function()
+        task.spawn(function()
+            local successReq, req = pcall(function()
+                return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")
+            end)
+            
+            if successReq and req then
+                local successDec, body = pcall(function()
+                    return HttpService:JSONDecode(req)
+                end)
+                
+                if successDec and body and body.data then
+                    local servers = {}
+                    for _, s in ipairs(body.data) do
+                        if s.id ~= game.JobId and s.playing < s.maxPlayers then
+                            table.insert(servers, s.id)
+                        end
+                    end
+                    
+                    if #servers > 0 then
+                        TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
+                        return
+                    end
+                end
+            end
+            WindUI:Notify({ Title = "Gagal", Content = "Tidak ada server lain yang ditemukan!", Duration = 3 })
+        end)
+    end
+})
+
+HomeTab:Button({
+    Title = "Copy JobId",
+    Desc = "Menyalin JobId server saat ini ke clipboard",
+    Callback = function()
+        local valCopyFunc = setclipboard or toclipboard or (Clipboard and Clipboard.set)
+        if valCopyFunc then
+            valCopyFunc(game.JobId)
+            WindUI:Notify({ Title = "Berhasil", Content = "JobId berhasil disalin!", Duration = 3 })
+        else
+            WindUI:Notify({ Title = "Gagal", Content = "Executor tidak mendukung clipboard!", Duration = 3 })
+        end
+    end
+})
+
+HomeTab:Section({ Title = "Community Links" })
+
+HomeTab:Button({
+    Title = "TikTok: @kyzen868",
+    Desc = "Salin link TikTok",
+    Callback = function()
+        local copyFunc = setclipboard or toclipboard or (Clipboard and Clipboard.set)
+        if copyFunc then
+            copyFunc("https://tiktok.com/@kyzen868")
+            WindUI:Notify({ Title = "Berhasil", Content = "Link TikTok disalin ke clipboard!", Duration = 3 })
+        else
+            WindUI:Notify({ Title = "Gagal", Content = "Executor tidak mendukung clipboard!", Duration = 3 })
+        end
+    end
+})
+
+HomeTab:Button({
+    Title = "WhatsApp Channel",
+    Desc = "Salin link Saluran WhatsApp KyZen HUB",
+    Callback = function()
+        local copyFunc = setclipboard or toclipboard or (Clipboard and Clipboard.set)
+        if copyFunc then
+            copyFunc("https://whatsapp.com/channel/0029VbDTYKY9cDDhMKZB3H0J")
+            WindUI:Notify({ Title = "Berhasil", Content = "Link Saluran WA disalin ke clipboard!", Duration = 3 })
+        else
+            WindUI:Notify({ Title = "Gagal", Content = "Executor tidak mendukung clipboard!", Duration = 3 })
+        end
+    end
+})
+
+
+-- =================================================================
+-- 2. ISI FITUR PLAYER (DENGAN PENAMBAHAN FITUR BARU)
+-- =================================================================
+
+PlayerTab:Section({ Title = "Player Control & States" })
+
+PlayerTab:Toggle({
+    Title = "Fly (Terbang)",
+    Default = false,
+    Callback = function(v)
+        print("Fly status:", v)
+    end
+})
+
+-- Variabel logika untuk No Clip v5 Smooth
+local noclipEnabled = false
+local noclipConnection = nil
+
+PlayerTab:Toggle({
+    Title = "No Clip v5 Smooth",
+    Default = false,
+    Callback = function(v)
+        noclipEnabled = v
+        if noclipEnabled then
+            noclipConnection = RunService.Stepped:Connect(function()
+                if Character then
+                    for _, part in ipairs(Character:GetDescendants()) do
+                        if part:IsA("BasePart") then
+                            part.CanCollide = false
+                        end
+                    end
+                end
+            end)
+        else
+            if noclipConnection then
+                noclipConnection:Disconnect()
+                noclipConnection = nil
+            end
+        end
+    end
+})
+
+PlayerTab:Slider({
+    Title = "HipHeight",
+    Min = 2,
+    Max = 20,
+    Default = 2,
+    Callback = function(v)
+        if Humanoid then Humanoid.HipHeight = v end
+    end
+})
+
+PlayerTab:Slider({
+    Title = "Gravity",
+    Min = 0,
+    Max = 200,
+    Default = workspace.Gravity,
+    Callback = function(v)
+        workspace.Gravity = v
+    end
+})
+
+-- Variabel logika untuk Anti Ragdoll + Anti Trip
+local antiRagdollEnabled = false
+local antiRagdollConnection = nil
+
+PlayerTab:Toggle({
+    Title = "Anti Ragdoll + Anti Trip",
+    Default = false,
+    Callback = function(v)
+        antiRagdollEnabled = v
+        if antiRagdollEnabled then
+            antiRagdollConnection = RunService.Stepped:Connect(function()
+                if Humanoid then
+                    pcall(function()
+                        Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+                    end)
+                end
+            end)
+        else
+            if antiRagdollConnection then
+                antiRagdollConnection:Disconnect()
+                antiRagdollConnection = nil
+            end
+        end
+    end
+})
+
+-- Anti Fall Damage
+local antiFallEnabled = false
+PlayerTab:Toggle({
+    Title = "Anti Fall Damage",
+    Default = false,
+    Callback = function(v)
+        antiFallEnabled = v
+        WindUI:Notify({ Title = "Anti Fall Damage", Content = "Status: " .. tostring(v), Duration = 2 })
+    end
+})
+
+PlayerTab:Button({
+    Title = "Reset Character Safe",
+    Desc = "Mereset karakter dengan aman",
+    Callback = function()
+        pcall(function()
+            LocalPlayer:LoadCharacter()
+        end)
+    end
+})
+
+PlayerTab:Toggle({
+    Title = "Sit / Lay Toggle",
+    Default = false,
+    Callback = function(v)
+        if Humanoid then
+            Humanoid.Sit = v
+        end
+    end
+})
+
+
+-- =================================================================
+-- 3. MENU TAB LAINNYA
+-- =================================================================
+
+-- MOVEMENT TAB
+MovemendTab:Section({ Title = "Movement Settings" })
+MovemendTab:Slider({
+    Title = "WalkSpeed",
+    Min = 16,
+    Max = 300,
+    Default = 16,
+    Callback = function(v)
+        if Humanoid then Humanoid.WalkSpeed = v end
+    end
+})
+
+MovemendTab:Slider({
+    Title = "JumpPower",
+    Min = 50,
+    Max = 400,
+    Default = 50,
+    Callback = function(v)
+        if Humanoid then Humanoid.JumpPower = v end
+    end
+})
+
+-- ESP TAB
+EspTab:Section({ Title = "ESP Settings" })
+EspTab:Toggle({
+    Title = "ESP Player Box",
+    Default = false,
+    Callback = function(v)
+        print("ESP status:", v)
+    end
+})
+
+-- VISUAL TAB
+VisualTab:Section({ Title = "Visual Settings" })
+VisualTab:Toggle({
+    Title = "Fullbright",
+    Default = false,
+    Callback = function(v)
+        if v then
+            Lighting.Brightness = 2
+            Lighting.ClockTime = 14
+            Lighting.GlobalShadows = false
+        else
+            Lighting.Brightness = 1
+            Lighting.GlobalShadows = true
+        end
+    end
+})
+
+-- COMBAT TAB
+CombatTab:Section({ Title = "Combat Settings" })
+CombatTab:Toggle({
+    Title = "Aimbot",
+    Default = false,
+    Callback = function(v)
+        print("Aimbot status:", v)
+    end
+})
+
+-- TROLL FE TAB
+TrollFETab:Section({ Title = "Troll Options" })
+TrollFETab:Button({
+    Title = "Spinbot",
+    Callback = function()
+        print("Spinbot activated")
+    end
+})
+
+-- UTILITY / UNTYLIT TAB
+UntylitTab:Section({ Title = "Utility Tools" })
+UntylitTab:Toggle({
+    Title = "Anti AFK",
+    Default = true,
+    Callback = function(v)
+        print("Anti AFK status:", v)
+    end
+})
+
+
+-- =================================================================
+-- 4. SETTING TAB & CUSTOM NAME TAG CONFIG
+-- =================================================================
+SettingTab:Section({ Title = "Config / Custom Name Tag" })
+
+local nameTagEnabled = false
+local customNameString = LocalPlayer.Name
+local verifiedEnabled = true
+
+local function refreshNameTag()
+    if not Character then return end
+    local head = Character:FindFirstChild("Head")
+    if not head then return end
+    
+    local existingGui = head:FindFirstChild("KyZenCustomTag")
+    if nameTagEnabled then
+        if not existingGui then
+            existingGui = Instance.new("BillboardGui")
+            existingGui.Name = "KyZenCustomTag"
+            existingGui.Size = UDim2.new(0, 200, 0, 50)
+            existingGui.StudsOffset = Vector3.new(0, 2.5, 0)
+            existingGui.AlwaysOnTop = true
+            existingGui.Parent = head
+            
+            local tLabel = Instance.new("TextLabel")
+            tLabel.Name = "TagText"
+            tLabel.Size = UDim2.new(1, 0, 1, 0)
+            tLabel.BackgroundTransparency = 1
+            tLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+            tLabel.TextStrokeTransparency = 0
+            tLabel.TextSize = 18
+            tLabel.Font = Enum.Font.GothamBold
+            tLabel.Parent = existingGui
+        end
+        
+        local tLabel = existingGui:FindFirstChild("TagText")
+        if tLabel then
+            tLabel.RichText = true
+            local badge = verifiedEnabled and " <font color='#3897f0'>✔</font>" or ""
+            tLabel.Text = customNameString .. badge
+        end
+    else
+        if existingGui then
+            existingGui:Destroy()
+        end
+    end
+end
+
+-- Refresh name tag saat karakter respawn baru
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    Humanoid = newChar:WaitForChild("Humanoid")
+    HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+    task.wait(0.5)
+    refreshNameTag()
+end)
+
+SettingTab:Toggle({
+    Title = "Enable Custom Name Tag",
+    Default = false,
+    Callback = function(v)
+        nameTagEnabled = v
+        refreshNameTag()
+    end
+})
+
+SettingTab:Input({
+    Title = "Name Tag Text",
+    Placeholder = "Ketik tulisan name tag...",
+    Value = LocalPlayer.Name,
+    Callback = function(v)
+        customNameString = v ~= "" and v or LocalPlayer.Name
+        refreshNameTag()
+    end
+})
+
+SettingTab:Toggle({
+    Title = "Verified Badge",
+    Default = true,
+    Callback = function(v)
+        verifiedEnabled = v
+        refreshNameTag()
+    end
+})
+
+
+-- =================================================================
+-- 5. INISIALISASI UTAMA SAAT SCRIPT DI-EXECUTE
+-- =================================================================
+pcall(function()
+    Window:SelectTab(1) -- Memastikan terbuka otomatis ke menu Home
+end)
+
+-- Notifikasi Berhasil Load
+WindUI:Notify({
+    Title = "KyZen Hub Template",
+    Content = "Berhasil dimuat, selamat datang " .. LocalPlayer.Name .. "!",
+    Duration = 4
+})
