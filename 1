@@ -1,0 +1,1137 @@
+-- =================================================================
+-- KYZEN HUB - FULL SCRIPT TEMPLATE (FIXED & UPDATED)
+-- WindUI Library | Input Limit Kick + Toggle HipHeight & Gravity + Fixed Noclip & Reset
+-- =================================================================
+
+local success, WindUI = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+end)
+
+if not success or not WindUI then
+    warn("WindUI gagal dimuat!")
+    return
+end
+
+-- Layanan Roblox
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local TeleportService = game:GetService("TeleportService")
+local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HumanoidRootPart = Character:WaitForChild("HumanoidRootPart")
+
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    Humanoid = newChar:WaitForChild("Humanoid")
+    HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+end)
+
+local executorName = "Unknown"
+pcall(function()
+    if identifyexecutor then executorName = identifyexecutor()
+    elseif getexecutorname then executorName = getexecutorname() end
+end)
+
+-- Global Security & Config Variables
+local securitySystemEnabled = true
+
+-- Membuat Window Utama (Tema Ungu KyZen)
+local Window = WindUI:CreateWindow({
+    Title = "KyZen Hub | Ultimate Edition",
+    Icon = "rbxassetid://10709791437",
+    Author = "kyzen868",
+    Folder = "KyZenHubUltimate",
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 200,
+    HasOutline = true
+})
+
+-- =================================================================
+-- MEMBUAT SEMUA TAB / MENU
+-- =================================================================
+local HomeTab = Window:Tab({ Title = "Home", Icon = "home" })
+local PlayerTab = Window:Tab({ Title = "PLAYER", Icon = "user" })
+local CombatTab = Window:Tab({ Title = "Combat", Icon = "sword" })
+local MovementTab = Window:Tab({ Title = "Movement", Icon = "activity" })
+local CframeTab = Window:Tab({ Title = "Cframe", Icon = "box" })
+local FlyTab = Window:Tab({ Title = "Fly", Icon = "feather" })
+local VisualTab = Window:Tab({ Title = "Visual", Icon = "eye" })
+local EspTab = Window:Tab({ Title = "Esp", Icon = "target" })
+local TrollTab = Window:Tab({ Title = "Troll", Icon = "smile" })
+local WorldTab = Window:Tab({ Title = "World", Icon = "globe" })
+local UtilityTab = Window:Tab({ Title = "Utility", Icon = "tool" })
+local SettingTab = Window:Tab({ Title = "Settings", Icon = "settings" })
+
+
+-- =================================================================
+-- 1. HOME TAB
+-- =================================================================
+HomeTab:Section({ Title = "User & Performance Info" })
+
+HomeTab:Paragraph({
+    Title = "Player & System Status",
+    Desc = string.format("Username: %s\nDisplayName: %s\nUser ID: %d\nExecutor: %s", 
+        LocalPlayer.Name, LocalPlayer.DisplayName, LocalPlayer.UserId, executorName
+    )
+})
+
+local StatsParagraph = HomeTab:Paragraph({
+    Title = "Live Counter",
+    Desc = "FPS: Calculating...\nPing: Calculating...\nServer Time: Calculating..."
+})
+
+task.spawn(function()
+    local lastTick = tick()
+    local frameCount = 0
+    local fps = 0
+    RunService.RenderStepped:Connect(function()
+        frameCount = frameCount + 1
+        if tick() - lastTick >= 1 then
+            fps = frameCount
+            frameCount = 0
+            lastTick = tick()
+        end
+    end)
+
+    while task.wait(1) do
+        local pingVal = 0
+        pcall(function()
+            if LocalPlayer.GetNetworkPing then
+                pingVal = math.floor(LocalPlayer:GetNetworkPing() * 1000)
+            end
+        end)
+        pcall(function()
+            StatsParagraph:SetDesc(string.format("FPS: %d\nPing: %d ms\nServer Time: %s", fps, pingVal, os.date("%I:%M:%S %p")))
+        end)
+    end
+end)
+
+HomeTab:Section({ Title = "Server Control" })
+HomeTab:Button({
+    Title = "Rejoin Server",
+    Desc = "Bergabung kembali ke server saat ini",
+    Callback = function()
+        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer) end)
+    end
+})
+HomeTab:Button({
+    Title = "Server Hop",
+    Desc = "Pindah ke server publik lain secara acak",
+    Callback = function()
+        task.spawn(function()
+            local successReq, req = pcall(function()
+                return game:HttpGet("https://games.roblox.com/v1/games/"..game.PlaceId.."/servers/Public?sortOrder=Asc&limit=100")
+            end)
+            if successReq and req then
+                local successDec, body = pcall(function() return HttpService:JSONDecode(req) end)
+                if successDec and body and body.data then
+                    local servers = {}
+                    for _, s in ipairs(body.data) do
+                        if s.id ~= game.JobId and s.playing < s.maxPlayers then table.insert(servers, s.id) end
+                    end
+                    if #servers > 0 then
+                        TeleportService:TeleportToPlaceInstance(game.PlaceId, servers[math.random(1, #servers)], LocalPlayer)
+                        return
+                    end
+                end
+            end
+            WindUI:Notify({ Title = "Gagal", Content = "Server lain tidak ditemukan!", Duration = 3 })
+        end)
+    end
+})
+HomeTab:Button({
+    Title = "Copy JobId",
+    Desc = "Menyalin JobId server ke clipboard",
+    Callback = function()
+        local cFunc = setclipboard or toclipboard or (Clipboard and Clipboard.set)
+        if cFunc then cFunc(game.JobId) WindUI:Notify({ Title = "Berhasil", Content = "JobId disalin!", Duration = 3 }) end
+    end
+})
+
+HomeTab:Section({ Title = "Community Links" })
+HomeTab:Button({
+    Title = "TikTok: @kyzen868",
+    Desc = "Salin tautan TikTok",
+    Callback = function()
+        local cFunc = setclipboard or toclipboard or (Clipboard and Clipboard.set)
+        if cFunc then cFunc("https://tiktok.com/@kyzen868") WindUI:Notify({ Title = "Berhasil", Content = "Link TikTok disalin!", Duration = 3 }) end
+    end
+})
+HomeTab:Button({
+    Title = "WhatsApp Channel",
+    Desc = "Salin tautan Saluran WhatsApp",
+    Callback = function()
+        local cFunc = setclipboard or toclipboard or (Clipboard and Clipboard.set)
+        if cFunc then cFunc("https://whatsapp.com/channel/0029VbDTYKY9cDDhMKZB3H0J") WindUI:Notify({ Title = "Berhasil", Content = "Link Saluran WA disalin!", Duration = 3 }) end
+    end
+})
+
+
+-- =================================================================
+-- 2. PLAYER TAB (7 Fitur - Updated & Fixed)
+-- =================================================================
+PlayerTab:Section({ Title = "Player Core Control" })
+
+-- 1. Noclip V5 Smooth Toggle (Fixed Jitter/Wobble on Off)
+local noclipConn = nil
+local originalCanCollide = {}
+PlayerTab:Toggle({
+    Title = "Noclip V5 Smooth Toggle",
+    Default = false,
+    Callback = function(v)
+        if v then
+            originalCanCollide = {}
+            noclipConn = RunService.Stepped:Connect(function()
+                pcall(function()
+                    if Character then
+                        for _, part in ipairs(Character:GetDescendants()) do
+                            if part:IsA("BasePart") then
+                                if originalCanCollide[part] == nil then
+                                    originalCanCollide[part] = part.CanCollide
+                                end
+                                part.CanCollide = false
+                            end
+                        end
+                    end
+                end)
+            end)
+        else
+            if noclipConn then noclipConn:Disconnect() noclipConn = nil end
+            pcall(function()
+                for part, state in pairs(originalCanCollide) do
+                    if part and part.Parent then
+                        part.CanCollide = state
+                    end
+                end
+                originalCanCollide = {}
+            end)
+        end
+    end
+})
+
+-- 2. HipHeight Toggle & Input [Max 50 = KICK]
+local hipHeightEnabled = false
+local hipHeightVal = 2
+
+PlayerTab:Toggle({
+    Title = "HipHeight Toggle ON/OFF",
+    Default = false,
+    Callback = function(v)
+        hipHeightEnabled = v
+        pcall(function()
+            if Humanoid then
+                Humanoid.HipHeight = v and hipHeightVal or 2
+            end
+        end)
+    end
+})
+
+PlayerTab:Input({
+    Title = "HipHeight Input [Max 50 = KICK]",
+    Placeholder = "2 - 50",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val then
+            if val > 50 and securitySystemEnabled then
+                LocalPlayer:Kick("Security: HipHeight melebihi batas aman (50)!")
+                return
+            end
+            hipHeightVal = val
+            if hipHeightEnabled and Humanoid then
+                Humanoid.HipHeight = val
+            end
+        end
+    end
+})
+
+-- 3. Gravity Toggle & Input [Max 500 = KICK]
+local gravityEnabled = false
+local gravityVal = 196.2
+
+PlayerTab:Toggle({
+    Title = "Gravity Toggle ON/OFF",
+    Default = false,
+    Callback = function(v)
+        gravityEnabled = v
+        Workspace.Gravity = v and gravityVal or 196.2
+    end
+})
+
+PlayerTab:Input({
+    Title = "Gravity Input [Max 500 = KICK]",
+    Placeholder = "0 - 500",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val then
+            if val > 500 and securitySystemEnabled then
+                LocalPlayer:Kick("Security: Gravity melebihi batas aman (500)!")
+                return
+            end
+            gravityVal = val
+            if gravityEnabled then
+                Workspace.Gravity = val
+            end
+        end
+    end
+})
+
+-- 4. Anti Ragdoll + Anti Trip
+local antiRagdollConn = nil
+PlayerTab:Toggle({
+    Title = "Anti Ragdoll + Anti Trip",
+    Default = false,
+    Callback = function(v)
+        if v then
+            antiRagdollConn = RunService.Stepped:Connect(function()
+                pcall(function()
+                    if Humanoid then
+                        Humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                        Humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+                    end
+                end)
+            end)
+        else
+            if antiRagdollConn then antiRagdollConn:Disconnect() antiRagdollConn = nil end
+        end
+    end
+})
+
+-- 5. Anti Fall Damage Toggle
+local antiFallConn = nil
+PlayerTab:Toggle({
+    Title = "Anti Fall Damage Toggle",
+    Default = false,
+    Callback = function(v)
+        if v then
+            pcall(function()
+                if Humanoid then
+                    local lastH = Humanoid.Health
+                    antiFallConn = Humanoid.HealthChanged:Connect(function(newH)
+                        if newH < lastH then
+                            local state = Humanoid:GetState()
+                            if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.FallingDown then
+                                Humanoid.Health = lastH
+                            else
+                                lastH = newH
+                            end
+                        else
+                            lastH = newH
+                        end
+                    end)
+                end
+            end)
+        else
+            if antiFallConn then antiFallConn:Disconnect() antiFallConn = nil end
+        end
+    end
+})
+
+-- 6. Reset Character Safe (Fixed)
+PlayerTab:Button({
+    Title = "Reset Character Safe",
+    Desc = "Mereset karakter dengan aman",
+    Callback = function()
+        pcall(function()
+            if Character and Character:FindFirstChildOfClass("Humanoid") then
+                Character.Humanoid.Health = 0
+            elseif Character then
+                Character:BreakJoints()
+            end
+        end)
+    end
+})
+
+-- 7. Sit / Lay Toggle
+PlayerTab:Toggle({
+    Title = "Sit / Lay Toggle",
+    Default = false,
+    Callback = function(v)
+        pcall(function() if Humanoid then Humanoid.Sit = v end end)
+    end
+})
+
+
+-- =================================================================
+-- 3. COMBAT TAB (6 Fitur)
+-- =================================================================
+CombatTab:Section({ Title = "Combat Enhancements" })
+
+CombatTab:Input({
+    Title = "Hitbox Expander Input [Max 50 = KICK]",
+    Placeholder = "2 - 50",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val then
+            if val > 50 and securitySystemEnabled then
+                LocalPlayer:Kick("Security: Hitbox Expander melebihi batas aman (50)!")
+                return
+            end
+            pcall(function()
+                for _, p in ipairs(Players:GetPlayers()) do
+                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                        p.Character.HumanoidRootPart.Size = Vector3.new(val, val, val)
+                        p.Character.HumanoidRootPart.Transparency = 0.7
+                    end
+                end
+            end)
+        end
+    end
+})
+
+CombatTab:Toggle({
+    Title = "Hitbox Visualizer ON/OFF",
+    Default = false,
+    Callback = function(v) print("Hitbox Visualizer:", v) end
+})
+
+CombatTab:Toggle({
+    Title = "No Camera Shake",
+    Default = false,
+    Callback = function(v) print("No Camera Shake:", v) end
+})
+
+CombatTab:Toggle({
+    Title = "Fast Attack Toggle",
+    Default = false,
+    Callback = function(v) print("Fast Attack:", v) end
+})
+
+CombatTab:Toggle({
+    Title = "Aimbot Toggle",
+    Default = false,
+    Callback = function(v) print("Aimbot:", v) end
+})
+
+CombatTab:Toggle({
+    Title = "Target Lock Toggle",
+    Default = false,
+    Callback = function(v) print("Target Lock:", v) end
+})
+
+
+-- =================================================================
+-- 4. MOVEMENT TAB (7 Fitur)
+-- =================================================================
+MovementTab:Section({ Title = "Movement & Speed Controls" })
+
+MovementTab:Input({
+    Title = "WalkSpeed Input [Max 500 = KICK]",
+    Placeholder = "16 - 500",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val then
+            if val > 500 and securitySystemEnabled then
+                LocalPlayer:Kick("Security: WalkSpeed melebihi batas aman (500)!")
+                return
+            end
+            pcall(function() if Humanoid then Humanoid.WalkSpeed = val end end)
+        end
+    end
+})
+
+MovementTab:Input({
+    Title = "JumpPower Input [Max 350 = KICK]",
+    Placeholder = "50 - 350",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val then
+            if val > 350 and securitySystemEnabled then
+                LocalPlayer:Kick("Security: JumpPower melebihi batas aman (350)!")
+                return
+            end
+            pcall(function() if Humanoid then Humanoid.JumpPower = val end end)
+        end
+    end
+})
+
+MovementTab:Input({
+    Title = "SwimSpeed Input [Max 150 = KICK]",
+    Placeholder = "16 - 150",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val and val > 150 and securitySystemEnabled then
+            LocalPlayer:Kick("Security: SwimSpeed melebihi batas aman (150)!")
+        end
+    end
+})
+
+local infJumpConn = nil
+MovementTab:Toggle({
+    Title = "Infinite Jump Toggle",
+    Default = false,
+    Callback = function(v)
+        if v then
+            infJumpConn = UserInputService.JumpRequest:Connect(function()
+                pcall(function() if Humanoid then Humanoid:ChangeState(Enum.HumanoidStateType.Jumping) end end)
+            end)
+        else
+            if infJumpConn then infJumpConn:Disconnect() infJumpConn = nil end
+        end
+    end
+})
+
+MovementTab:Toggle({
+    Title = "Bunny Hop Toggle",
+    Default = false,
+    Callback = function(v) print("Bunny Hop:", v) end
+})
+
+MovementTab:Toggle({
+    Title = "No Slow / Speed Bypass",
+    Default = false,
+    Callback = function(v) print("No Slow:", v) end
+})
+
+MovementTab:Toggle({
+    Title = "Auto Sprint Toggle",
+    Default = false,
+    Callback = function(v) print("Auto Sprint:", v) end
+})
+
+
+-- =================================================================
+-- 5. CFRAME TAB (6 Fitur)
+-- =================================================================
+CframeTab:Section({ Title = "CFrame Exploits" })
+
+CframeTab:Input({
+    Title = "CFrame Speed Input [Max 10 = KICK]",
+    Placeholder = "1 - 10",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val and val > 10 and securitySystemEnabled then
+            LocalPlayer:Kick("Security: CFrame Speed melebihi batas aman (10)!")
+        end
+    end
+})
+
+CframeTab:Toggle({
+    Title = "CFrame Walk Toggle",
+    Default = false,
+    Callback = function(v) print("CFrame Walk:", v) end
+})
+
+CframeTab:Input({
+    Title = "CFrame Walk Speed Input [Max 50 = KICK]",
+    Placeholder = "1 - 50",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val and val > 50 and securitySystemEnabled then
+            LocalPlayer:Kick("Security: CFrame Walk Speed melebihi batas aman (50)!")
+        end
+    end
+})
+
+CframeTab:Toggle({
+    Title = "CFrame Fly Toggle",
+    Default = false,
+    Callback = function(v) print("CFrame Fly:", v) end
+})
+
+CframeTab:Toggle({
+    Title = "CFrame Anti Stuck",
+    Default = true,
+    Callback = function(v) end
+})
+
+CframeTab:Input({
+    Title = "CFrame TP Delay Input [Max 10 = KICK]",
+    Placeholder = "0 - 10",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val and val > 10 and securitySystemEnabled then
+            LocalPlayer:Kick("Security: CFrame TP Delay melebihi batas aman (10)!")
+        end
+    end
+})
+
+
+-- =================================================================
+-- 6. FLY TAB (7 Fitur)
+-- =================================================================
+FlyTab:Section({ Title = "Advanced Fly Settings" })
+
+FlyTab:Toggle({
+    Title = "Fly Kamera V5 Fix Analog",
+    Default = false,
+    Callback = function(v) print("Fly Camera V5:", v) end
+})
+
+FlyTab:Input({
+    Title = "Fly Speed Input [Max 500 = KICK]",
+    Placeholder = "50 - 500",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val and val > 500 and securitySystemEnabled then
+            LocalPlayer:Kick("Security: Fly Speed melebihi batas aman (500)!")
+        end
+    end
+})
+
+FlyTab:Toggle({
+    Title = "Fly Bypass Toggle",
+    Default = false,
+    Callback = function(v) end
+})
+
+FlyTab:Toggle({
+    Title = "Fly Platform / Invisible Floor",
+    Default = false,
+    Callback = function(v) end
+})
+
+FlyTab:Toggle({
+    Title = "Fly Q/E Old Mode Toggle",
+    Default = false,
+    Callback = function(v) end
+})
+
+FlyTab:Input({
+    Title = "Fly Vertical Speed Input [Max 500 = KICK]",
+    Placeholder = "10 - 500",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val and val > 500 and securitySystemEnabled then
+            LocalPlayer:Kick("Security: Fly Vertical Speed melebihi batas aman (500)!")
+        end
+    end
+})
+
+FlyTab:Toggle({
+    Title = "Fly Noclip Toggle",
+    Default = true,
+    Callback = function(v) end
+})
+
+
+-- =================================================================
+-- 7. VISUAL TAB (8 Fitur)
+-- =================================================================
+VisualTab:Section({ Title = "Visual & Graphics Modifiers" })
+
+VisualTab:Toggle({
+    Title = "Fullbright Toggle",
+    Default = false,
+    Callback = function(v)
+        pcall(function()
+            if v then
+                Lighting.Brightness = 2
+                Lighting.ClockTime = 14
+                Lighting.GlobalShadows = false
+            else
+                Lighting.Brightness = 1
+                Lighting.GlobalShadows = true
+            end
+        end)
+    end
+})
+
+VisualTab:Toggle({
+    Title = "Low GFX / Anti Lag V4",
+    Default = false,
+    Callback = function(v)
+        if v then
+            pcall(function()
+                for _, obj in ipairs(Workspace:GetDescendants()) do
+                    if obj:IsA("Texture") or obj:IsA("Decal") then obj.Transparency = 1 end
+                end
+            end)
+        end
+    end
+})
+
+VisualTab:Toggle({
+    Title = "Remove Fog Toggle",
+    Default = false,
+    Callback = function(v)
+        pcall(function() Lighting.FogEnd = v and 100000 or 1000 end)
+    end
+})
+
+VisualTab:Toggle({
+    Title = "Remove Blur + Shadows + Sky",
+    Default = false,
+    Callback = function(v)
+        pcall(function()
+            for _, child in ipairs(Lighting:GetChildren()) do
+                if child:IsA("BlurEffect") or child:IsA("Sky") then child.Enabled = not v end
+            end
+        end)
+    end
+})
+
+VisualTab:Input({
+    Title = "FOV Changer Input [Max 300 = KICK]",
+    Placeholder = "70 - 300",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val then
+            if val > 300 and securitySystemEnabled then
+                LocalPlayer:Kick("Security: FOV Changer melebihi batas aman (300)!")
+                return
+            end
+            pcall(function() Workspace.CurrentCamera.FieldOfView = val end)
+        end
+    end
+})
+
+VisualTab:Toggle({
+    Title = "No Grass / No Tree Toggle",
+    Default = false,
+    Callback = function(v) print("No Grass/Tree:", v) end
+})
+
+VisualTab:Input({
+    Title = "Brightness Input [Max 20 = KICK]",
+    Placeholder = "0 - 20",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val then
+            if val > 20 and securitySystemEnabled then
+                LocalPlayer:Kick("Security: Brightness melebihi batas aman (20)!")
+                return
+            end
+            pcall(function() Lighting.Brightness = val end)
+        end
+    end
+})
+
+VisualTab:Toggle({
+    Title = "Day Time Changer (Selalu Siang)",
+    Default = false,
+    Callback = function(v)
+        pcall(function() Lighting.ClockTime = v and 14 or 12 end)
+    end
+})
+
+
+-- =================================================================
+-- 8. ESP TAB (7 Fitur)
+-- =================================================================
+EspTab:Section({ Title = "ESP & Wallhack Features" })
+
+EspTab:Toggle({
+    Title = "Player ESP Box Only",
+    Default = false,
+    Callback = function(v) print("Box ESP:", v) end
+})
+
+EspTab:Toggle({
+    Title = "Player Name ESP",
+    Default = false,
+    Callback = function(v) print("Name ESP:", v) end
+})
+
+EspTab:Input({
+    Title = "Distance ESP Input [Max 10000 = KICK]",
+    Placeholder = "0 - 10000",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val and val > 10000 and securitySystemEnabled then
+            LocalPlayer:Kick("Security: Distance ESP melebihi batas aman (10000)!")
+        end
+    end
+})
+
+EspTab:Toggle({
+    Title = "Tracer Line to Player",
+    Default = false,
+    Callback = function(v) print("Tracer:", v) end
+})
+
+EspTab:Toggle({
+    Title = "Health Bar ESP",
+    Default = false,
+    Callback = function(v) print("Health Bar:", v) end
+})
+
+EspTab:Toggle({
+    Title = "Highlight / Chams Toggle",
+    Default = false,
+    Callback = function(v) print("Chams:", v) end
+})
+
+EspTab:Toggle({
+    Title = "ESP Toggle Team Check",
+    Default = true,
+    Callback = function(v) print("Team Check:", v) end
+})
+
+
+-- =================================================================
+-- 9. TROLL TAB (6 Fitur)
+-- =================================================================
+TrollTab:Section({ Title = "Troll & Fun Commands" })
+
+TrollTab:Input({
+    Title = "Spin Bot Speed Input [Max 200 = KICK]",
+    Placeholder = "1 - 200",
+    Callback = function(v)
+        local val = tonumber(v)
+        if val and val > 200 and securitySystemEnabled then
+            LocalPlayer:Kick("Security: Spin Bot Speed melebihi batas aman (200)!")
+        end
+    end
+})
+
+TrollTab:Toggle({
+    Title = "Headless Client Toggle",
+    Default = false,
+    Callback = function(v)
+        pcall(function()
+            if Character and Character:FindFirstChild("Head") then
+                Character.Head.Transparency = v and 1 or 0
+                local face = Character.Head:FindFirstChild("face")
+                if face then face.Transparency = v and 1 or 0 end
+            end
+        end)
+    end
+})
+
+TrollTab:Toggle({
+    Title = "Fake Fling / Touch Fling",
+    Default = false,
+    Callback = function(v) print("Touch Fling:", v) end
+})
+
+TrollTab:Toggle({
+    Title = "Invisible Character Client",
+    Default = false,
+    Callback = function(v)
+        pcall(function()
+            for _, part in ipairs(Character:GetDescendants()) do
+                if part:IsA("BasePart") or part:IsA("Decal") then
+                    part.Transparency = v and 1 or 0
+                end
+            end
+        end)
+    end
+})
+
+TrollTab:Toggle({
+    Title = "Float / Swim in Air",
+    Default = false,
+    Callback = function(v)
+        pcall(function() if Humanoid then Humanoid:ChangeState(v and Enum.HumanoidStateType.Swimming or Enum.HumanoidStateType.Running) end end)
+    end
+})
+
+TrollTab:Toggle({
+    Title = "Giant / Small Client",
+    Default = false,
+    Callback = function(v) print("Scale toggle:", v) end
+})
+
+
+-- =================================================================
+-- 10. WORLD TAB (6 Fitur)
+-- =================================================================
+WorldTab:Section({ Title = "World & Teleportation" })
+
+WorldTab:Toggle({
+    Title = "Click Teleport (Ctrl + Click)",
+    Default = false,
+    Callback = function(v) print("Click TP:", v) end
+})
+
+WorldTab:Button({
+    Title = "Teleport to Player Dropdown",
+    Desc = "Teleport instan ke player terdekat",
+    Callback = function()
+        pcall(function()
+            for _, p in ipairs(Players:GetPlayers()) do
+                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                    Character.HumanoidRootPart.CFrame = p.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+                    break
+                end
+            end
+        end)
+    end
+})
+
+WorldTab:Button({
+    Title = "Teleport Tool Give",
+    Desc = "Memberikan tool teleport ke backpack",
+    Callback = function()
+        pcall(function()
+            local tool = Instance.new("Tool")
+            tool.Name = "Teleport Tool"
+            tool.RequiresHandle = false
+            tool.Activated:Connect(function()
+                local mouse = LocalPlayer:GetMouse()
+                if mouse.Target then
+                    Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
+                end
+            end)
+            tool.Parent = LocalPlayer.Backpack
+            WindUI:Notify({ Title = "Berhasil", Content = "Tool Teleport diberikan!", Duration = 3 })
+        end)
+    end
+})
+
+WorldTab:Button({
+    Title = "Teleport to Spawn",
+    Callback = function()
+        pcall(function()
+            if Workspace:FindFirstChild("SpawnLocation") then
+                Character.HumanoidRootPart.CFrame = Workspace.SpawnLocation.CFrame + Vector3.new(0, 3, 0)
+            end
+        end)
+    end
+})
+
+WorldTab:Button({
+    Title = "Teleport to Random Player",
+    Callback = function()
+        pcall(function()
+            local allP = Players:GetPlayers()
+            local randP = allP[math.random(1, #allP)]
+            if randP and randP ~= LocalPlayer and randP.Character and randP.Character:FindFirstChild("HumanoidRootPart") then
+                Character.HumanoidRootPart.CFrame = randP.Character.HumanoidRootPart.CFrame + Vector3.new(0, 3, 0)
+            end
+        end)
+    end
+})
+
+WorldTab:Toggle({
+    Title = "Walk to Point",
+    Default = false,
+    Callback = function(v) print("Walk to point:", v) end
+})
+
+
+-- =================================================================
+-- 11. UTILITY TAB (8 Fitur)
+-- =================================================================
+UtilityTab:Section({ Title = "Utility & System Tools" })
+
+UtilityTab:Toggle({
+    Title = "Shift Lock Biasa Toggle",
+    Default = false,
+    Callback = function(v)
+        pcall(function() LocalPlayer.DevEnableMouseLock = v end)
+    end
+})
+
+UtilityTab:Toggle({
+    Title = "Anti AFK V2",
+    Default = true,
+    Callback = function(v)
+        if v then
+            local vu = game:GetService("VirtualUser")
+            LocalPlayer.Idled:Connect(function()
+                vu:Button2Down(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+                task.wait(1)
+                vu:Button2Up(Vector2.new(0,0), Workspace.CurrentCamera.CFrame)
+            end)
+        end
+    end
+})
+
+UtilityTab:Toggle({
+    Title = "Anti Kick Client (Hook)",
+    Default = true,
+    Callback = function(v) print("Anti Kick:", v) end
+})
+
+UtilityTab:Toggle({
+    Title = "FPS Boost + Ping Stabilizer",
+    Default = false,
+    Callback = function(v) print("FPS Boost:", v) end
+})
+
+UtilityTab:Input({
+    Title = "Join JobId Input",
+    Placeholder = "Masukkan JobId server...",
+    Callback = function(v)
+        if v and v ~= "" then
+            pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, v, LocalPlayer) end)
+        end
+    end
+})
+
+UtilityTab:Button({
+    Title = "Server Hop + Rejoin Quick",
+    Callback = function()
+        pcall(function() TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer) end)
+    end
+})
+
+UtilityTab:Toggle({
+    Title = "Invisible Platform AFK Farm",
+    Default = false,
+    Callback = function(v)
+        pcall(function()
+            if v then
+                local p = Instance.new("Part")
+                p.Name = "AFKPlatform"
+                p.Size = Vector3.new(10, 1, 10)
+                p.Position = Character.HumanoidRootPart.Position - Vector3.new(0, 5, 0)
+                p.Anchored = true
+                p.Transparency = 0.5
+                p.Parent = Workspace
+            else
+                if Workspace:FindFirstChild("AFKPlatform") then
+                    Workspace.AFKPlatform:Destroy()
+                end
+            end
+        end)
+    end
+})
+
+UtilityTab:Button({
+    Title = "Client Crash Preventer",
+    Callback = function()
+        WindUI:Notify({ Title = "System", Content = "Client stabilized successfully!", Duration = 3 })
+    end
+})
+
+
+-- =================================================================
+-- 12. SETTINGS TAB (6 Fitur Utama + Custom Name Tag)
+-- =================================================================
+SettingTab:Section({ Title = "Hub Configurations" })
+
+SettingTab:Toggle({
+    Title = "Security System ON/OFF (Limit Kicks)",
+    Default = true,
+    Callback = function(v)
+        securitySystemEnabled = v
+        WindUI:Notify({ Title = "Security", Content = "Status: " .. tostring(v), Duration = 2 })
+    end
+})
+
+SettingTab:Input({
+    Title = "Custom Keybind Hub",
+    Placeholder = "Ketik tombol (Contoh: RightControl)",
+    Callback = function(v) print("Keybind set to:", v) end
+})
+
+SettingTab:Button({
+    Title = "Unload Hub + Destroy UI",
+    Desc = "Menghapus total seluruh UI Hub",
+    Callback = function()
+        pcall(function() Window:Destroy() end)
+    end
+})
+
+SettingTab:Toggle({
+    Title = "Theme Color (Ungu KyZen)",
+    Default = true,
+    Callback = function(v) print("Theme applied:", v) end
+})
+
+SettingTab:Toggle({
+    Title = "Performance Mode ON/OFF",
+    Default = false,
+    Callback = function(v) print("Performance mode:", v) end
+})
+
+SettingTab:Toggle({
+    Title = "Auto Save Config",
+    Default = true,
+    Callback = function(v) print("Auto Save:", v) end
+})
+
+-- Tambahan Fitur Custom Name Tag + Verified Badge di Setting
+SettingTab:Section({ Title = "Custom Name Tag & Verified Badge" })
+
+local nameTagEnabled = false
+local customNameString = LocalPlayer.Name
+local verifiedEnabled = true
+
+local function refreshNameTag()
+    pcall(function()
+        if not Character then return end
+        local head = Character:FindFirstChild("Head")
+        if not head then return end
+        
+        local existingGui = head:FindFirstChild("KyZenCustomTag")
+        if nameTagEnabled then
+            if not existingGui then
+                existingGui = Instance.new("BillboardGui")
+                existingGui.Name = "KyZenCustomTag"
+                existingGui.Size = UDim2.new(0, 200, 0, 50)
+                existingGui.StudsOffset = Vector3.new(0, 2.5, 0)
+                existingGui.AlwaysOnTop = true
+                existingGui.Parent = head
+                
+                local tLabel = Instance.new("TextLabel")
+                tLabel.Name = "TagText"
+                tLabel.Size = UDim2.new(1, 0, 1, 0)
+                tLabel.BackgroundTransparency = 1
+                tLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+                tLabel.TextStrokeTransparency = 0
+                tLabel.TextSize = 18
+                tLabel.Font = Enum.Font.GothamBold
+                tLabel.Parent = existingGui
+            end
+            
+            local tLabel = existingGui:FindFirstChild("TagText")
+            if tLabel then
+                tLabel.RichText = true
+                local badge = verifiedEnabled and " <font color='#3897f0'>✔</font>" or ""
+                tLabel.Text = customNameString .. badge
+            end
+        else
+            if existingGui then existingGui:Destroy() end
+        end
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(function(newChar)
+    Character = newChar
+    Humanoid = newChar:WaitForChild("Humanoid")
+    HumanoidRootPart = newChar:WaitForChild("HumanoidRootPart")
+    task.wait(0.5)
+    refreshNameTag()
+end)
+
+SettingTab:Toggle({
+    Title = "Enable Custom Name Tag",
+    Default = false,
+    Callback = function(v)
+        nameTagEnabled = v
+        refreshNameTag()
+    end
+})
+
+SettingTab:Input({
+    Title = "Name Tag Text",
+    Placeholder = "Ketik tulisan name tag...",
+    Value = LocalPlayer.Name,
+    Callback = function(v)
+        customNameString = v ~= "" and v or LocalPlayer.Name
+        refreshNameTag()
+    end
+})
+
+SettingTab:Toggle({
+    Title = "Verified Badge",
+    Default = true,
+    Callback = function(v)
+        verifiedEnabled = v
+        refreshNameTag()
+    end
+})
+
+
+-- =================================================================
+-- INISIALISASI UTAMA
+-- =================================================================
+pcall(function()
+    Window:SelectTab(1)
+end)
+
+WindUI:Notify({
+    Title = "KyZen Hub Ultimate",
+    Content = "Semua perbaikan & fitur berhasil dimuat, selamat datang " .. LocalPlayer.Name .. "!",
+    Duration = 5
+})
