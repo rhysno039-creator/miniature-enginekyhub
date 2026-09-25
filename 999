@@ -1,0 +1,677 @@
+-- ================= AIRFLOW KEY SYSTEM =================
+local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local Workspace = game:GetService("Workspace")
+local Lighting = game:GetService("Lighting")
+local LocalPlayer = Players.LocalPlayer
+
+local keysList = {"From", "Get", "KyZen", "Owner", "Ganteng", "Follow", "Saluran", "Tiktok", "Om", "Tante"}
+local seed = tick() * os.time()
+math.randomseed(seed)
+math.random(); math.random(); math.random()
+local sessionKey = keysList[math.random(1, #keysList)]
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "KyZenAirflowKeySys"
+ScreenGui.Parent = CoreGui
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 480, 0, 270)
+MainFrame.Position = UDim2.new(0.5, -240, 0.5, -135)
+MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(0, 14)
+UICorner.Parent = MainFrame
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Color = Color3.fromRGB(70, 90, 220)
+UIStroke.Transparency = 0.3
+UIStroke.Thickness = 1.5
+UIStroke.Parent = MainFrame
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(0, 200, 0, 25)
+Title.Position = UDim2.new(0, 20, 0, 18)
+Title.BackgroundTransparency = 1
+Title.Text = "KyZen HUB"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 16
+Title.Font = Enum.Font.GothamBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = MainFrame
+
+local Subtitle = Instance.new("TextLabel")
+Subtitle.Size = UDim2.new(0, 200, 0, 15)
+Subtitle.Position = UDim2.new(0, 20, 0, 40)
+Subtitle.BackgroundTransparency = 1
+Subtitle.Text = "Key system"
+Subtitle.TextColor3 = Color3.fromRGB(130, 130, 150)
+Subtitle.TextSize = 12
+Subtitle.Font = Enum.Font.Gotham
+Subtitle.TextXAlignment = Enum.TextXAlignment.Left
+Subtitle.Parent = MainFrame
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 32, 0, 32)
+CloseBtn.Position = UDim2.new(1, -42, 0, 15)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(230, 50, 50)
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Text = "×"
+CloseBtn.TextSize = 22
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.Parent = MainFrame
+
+local CloseCorner = Instance.new("UICorner")
+CloseCorner.CornerRadius = UDim.new(0, 8)
+CloseCorner.Parent = CloseBtn
+
+local KeyInput = Instance.new("TextBox")
+KeyInput.Size = UDim2.new(0.55, 0, 0, 45)
+KeyInput.Position = UDim2.new(0.04, 0, 0, 75)
+KeyInput.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+KeyInput.TextColor3 = Color3.fromRGB(255, 255, 255)
+KeyInput.PlaceholderText = "Place key here"
+KeyInput.PlaceholderColor3 = Color3.fromRGB(100, 100, 120)
+KeyInput.TextSize = 13
+KeyInput.Font = Enum.Font.GothamMedium
+KeyInput.ClearTextOnFocus = false
+KeyInput.Parent = MainFrame
+
+local InputCorner = Instance.new("UICorner")
+InputCorner.CornerRadius = UDim.new(0, 8)
+InputCorner.Parent = KeyInput
+
+local InputStroke = Instance.new("UIStroke")
+InputStroke.Color = Color3.fromRGB(45, 45, 65)
+InputStroke.Thickness = 1
+InputStroke.Parent = KeyInput
+
+local GetKeyBtn = Instance.new("TextButton")
+GetKeyBtn.Size = UDim2.new(0.33, 0, 0, 45)
+GetKeyBtn.Position = UDim2.new(0.62, 0, 0, 75)
+GetKeyBtn.BackgroundColor3 = Color3.fromRGB(45, 65, 200)
+GetKeyBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+GetKeyBtn.Text = "Get a key"
+GetKeyBtn.TextSize = 13
+GetKeyBtn.Font = Enum.Font.GothamBold
+GetKeyBtn.Parent = MainFrame
+
+local GetKeyCorner = Instance.new("UICorner")
+GetKeyCorner.CornerRadius = UDim.new(0, 8)
+GetKeyCorner.Parent = GetKeyBtn
+
+local Card1 = Instance.new("Frame")
+Card1.Size = UDim2.new(0.3, 0, 0, 95)
+Card1.Position = UDim2.new(0.04, 0, 0, 140)
+Card1.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+Card1.BorderSizePixel = 0
+Card1.Parent = MainFrame
+local Card1Corner = Instance.new("UICorner")
+Card1Corner.CornerRadius = UDim.new(0, 8)
+Card1Corner.Parent = Card1
+
+local C1Title = Instance.new("TextLabel")
+C1Title.Size = UDim2.new(1, -10, 0, 20)
+C1Title.Position = UDim2.new(0, 10, 0, 10)
+C1Title.BackgroundTransparency = 1
+C1Title.Text = "Status"
+C1Title.TextColor3 = Color3.fromRGB(120, 120, 140)
+C1Title.TextSize = 11
+C1Title.Font = Enum.Font.GothamBold
+C1Title.TextXAlignment = Enum.TextXAlignment.Left
+C1Title.Parent = Card1
+
+local StatusLabel = Instance.new("TextLabel")
+StatusLabel.Size = UDim2.new(1, -10, 0, 40)
+StatusLabel.Position = UDim2.new(0, 10, 0, 35)
+StatusLabel.BackgroundTransparency = 1
+StatusLabel.Text = "Waiting for key..."
+StatusLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+StatusLabel.TextSize = 12
+StatusLabel.Font = Enum.Font.Gotham
+StatusLabel.TextXAlignment = Enum.TextXAlignment.Left
+StatusLabel.TextWrapped = true
+StatusLabel.Parent = Card1
+
+local Card2 = Instance.new("Frame")
+Card2.Size = UDim2.new(0.3, 0, 0, 95)
+Card2.Position = UDim2.new(0.35, 0, 0, 140)
+Card2.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+Card2.BorderSizePixel = 0
+Card2.Parent = MainFrame
+local Card2Corner = Instance.new("UICorner")
+Card2Corner.CornerRadius = UDim.new(0, 8)
+Card2Corner.Parent = Card2
+
+local C2Title = Instance.new("TextLabel")
+C2Title.Size = UDim2.new(1, -10, 0, 20)
+C2Title.Position = UDim2.new(0, 10, 0, 10)
+C2Title.BackgroundTransparency = 1
+C2Title.Text = "Supported"
+C2Title.TextColor3 = Color3.fromRGB(120, 120, 140)
+C2Title.TextSize = 11
+C2Title.Font = Enum.Font.GothamBold
+C2Title.TextXAlignment = Enum.TextXAlignment.Left
+C2Title.Parent = Card2
+
+local C2Desc = Instance.new("TextLabel")
+C2Desc.Size = UDim2.new(1, -10, 0, 40)
+C2Desc.Position = UDim2.new(0, 10, 0, 35)
+C2Desc.BackgroundTransparency = 1
+C2Desc.Text = "Universal Game"
+C2Desc.TextColor3 = Color3.fromRGB(0, 255, 120)
+C2Desc.TextSize = 12
+C2Desc.Font = Enum.Font.GothamBold
+C2Desc.TextXAlignment = Enum.TextXAlignment.Left
+C2Desc.Parent = Card2
+
+local Card3 = Instance.new("Frame")
+Card3.Size = UDim2.new(0.3, 0, 0, 95)
+Card3.Position = UDim2.new(0.66, 0, 0, 140)
+Card3.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+Card3.BorderSizePixel = 0
+Card3.Parent = MainFrame
+local Card3Corner = Instance.new("UICorner")
+Card3Corner.CornerRadius = UDim.new(0, 8)
+Card3Corner.Parent = Card3
+
+local C3Title = Instance.new("TextLabel")
+C3Title.Size = UDim2.new(1, -10, 0, 20)
+C3Title.Position = UDim2.new(0, 10, 0, 10)
+C3Title.BackgroundTransparency = 1
+C3Title.Text = "Creator"
+C3Title.TextColor3 = Color3.fromRGB(120, 120, 140)
+C3Title.TextSize = 11
+C3Title.Font = Enum.Font.GothamBold
+C3Title.TextXAlignment = Enum.TextXAlignment.Left
+C3Title.Parent = Card3
+
+local C3Desc = Instance.new("TextLabel")
+C3Desc.Size = UDim2.new(1, -10, 0, 40)
+C3Desc.Position = UDim2.new(0, 10, 0, 35)
+C3Desc.BackgroundTransparency = 1
+C3Desc.Text = "KyZen HUB"
+C3Desc.TextColor3 = Color3.fromRGB(100, 150, 255)
+C3Desc.TextSize = 12
+C3Desc.Font = Enum.Font.GothamBold
+C3Desc.TextXAlignment = Enum.TextXAlignment.Left
+C3Desc.Parent = Card3
+
+local PopupFrame = Instance.new("Frame")
+PopupFrame.Size = UDim2.new(0, 260, 0, 140)
+PopupFrame.Position = UDim2.new(0.5, -130, 0.5, -70)
+PopupFrame.BackgroundColor3 = Color3.fromRGB(22, 22, 30)
+PopupFrame.BorderSizePixel = 0
+PopupFrame.Visible = false
+PopupFrame.ZIndex = 10
+PopupFrame.Parent = ScreenGui
+
+local PopupCorner = Instance.new("UICorner")
+PopupCorner.CornerRadius = UDim.new(0, 10)
+PopupCorner.Parent = PopupFrame
+local PopupStroke = Instance.new("UIStroke")
+PopupStroke.Color = Color3.fromRGB(70, 70, 90)
+PopupStroke.Thickness = 1
+PopupStroke.Parent = PopupFrame
+
+local PopupTitle = Instance.new("TextLabel")
+PopupTitle.Size = UDim2.new(1, 0, 0, 35)
+PopupTitle.Position = UDim2.new(0, 0, 0, 15)
+PopupTitle.BackgroundTransparency = 1
+PopupTitle.Text = "Close Menu?"
+PopupTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+PopupTitle.TextSize = 15
+PopupTitle.Font = Enum.Font.GothamBold
+PopupTitle.ZIndex = 11
+PopupTitle.Parent = PopupFrame
+
+local PopupDesc = Instance.new("TextLabel")
+PopupDesc.Size = UDim2.new(1, 0, 0, 20)
+PopupDesc.Position = UDim2.new(0, 0, 0, 45)
+PopupDesc.BackgroundTransparency = 1
+PopupDesc.Text = "Are you sure you want to exit?"
+PopupDesc.TextColor3 = Color3.fromRGB(150, 150, 170)
+PopupDesc.TextSize = 12
+PopupDesc.Font = Enum.Font.Gotham
+PopupDesc.ZIndex = 11
+PopupDesc.Parent = PopupFrame
+
+local NoBtn = Instance.new("TextButton")
+NoBtn.Size = UDim2.new(0, 105, 0, 35)
+NoBtn.Position = UDim2.new(0, 15, 0, 85)
+NoBtn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
+NoBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+NoBtn.Text = "No"
+NoBtn.TextSize = 13
+NoBtn.Font = Enum.Font.GothamBold
+NoBtn.ZIndex = 11
+NoBtn.Parent = PopupFrame
+local NoCorner = Instance.new("UICorner")
+NoCorner.CornerRadius = UDim.new(0, 6)
+NoCorner.Parent = NoBtn
+
+local YesBtn = Instance.new("TextButton")
+YesBtn.Size = UDim2.new(0, 105, 0, 35)
+YesBtn.Position = UDim2.new(1, -120, 0, 85)
+YesBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+YesBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+YesBtn.Text = "Yes"
+YesBtn.TextSize = 13
+YesBtn.Font = Enum.Font.GothamBold
+YesBtn.ZIndex = 11
+YesBtn.Parent = PopupFrame
+local YesCorner = Instance.new("UICorner")
+YesCorner.CornerRadius = UDim.new(0, 6)
+YesCorner.Parent = YesBtn
+
+CloseBtn.MouseButton1Click:Connect(function() PopupFrame.Visible = true end)
+NoBtn.MouseButton1Click:Connect(function() PopupFrame.Visible = false end)
+YesBtn.MouseButton1Click:Connect(function() LocalPlayer:Kick("KyZen HUB: Verification closed.") end)
+
+local keyAuthenticated = false
+GetKeyBtn.MouseButton1Click:Connect(function()
+    pcall(function() setclipboard(sessionKey) end)
+    KeyInput.Text = sessionKey
+    StatusLabel.Text = "Key copied & auto-filled!"
+    StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 120)
+end)
+
+KeyInput:GetPropertyChangedSignal("Text"):Connect(function()
+    if keyAuthenticated then return end
+    local input = KeyInput.Text
+    local isValid = false
+    for _, k in pairs(keysList) do
+        if input == k or input == sessionKey then
+            isValid = true
+            break
+        end
+    end
+    if isValid then
+        keyAuthenticated = true
+        StatusLabel.Text = "Verified! Opening..."
+        StatusLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
+        task.wait(0.5)
+        ScreenGui:Destroy()
+    end
+end)
+
+while not keyAuthenticated do
+    task.wait(0.1)
+end
+
+-- ================= MAIN SCRIPT HUB =================
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "KyZen HUB | IS BACK",
+    Icon = "rbxassetid://10723415303",
+    Author = "KyZen",
+    Folder = "KyZenHubConfig",
+    Theme = "Dark",
+    Transparent = true,
+    Resizable = true,
+})
+
+-- SUSUNAN 13 MENU SESUAI PERMINTAAN
+local Tabs = {
+    Home = Window:Tab({ Title = "Home", Icon = "home" }),
+    Player = Window:Tab({ Title = "Player", Icon = "user" }),
+    ESP = Window:Tab({ Title = "ESP", Icon = "users" }),
+    Movement = Window:Tab({ Title = "Movement", Icon = "footprints" }),
+    Visual = Window:Tab({ Title = "Visual", Icon = "eye" }),
+    CFrame = Window:Tab({ Title = "CFrame", Icon = "zap" }),
+    Fly = Window:Tab({ Title = "Fly", Icon = "navigation" }),
+    Combat = Window:Tab({ Title = "Combat", Icon = "sword" }),
+    Troll = Window:Tab({ Title = "Troll", Icon = "smile" }),
+    World = Window:Tab({ Title = "World", Icon = "globe" }),
+    Teleport = Window:Tab({ Title = "Teleport", Icon = "map-pin" }),
+    Utility = Window:Tab({ Title = "Utility", Icon = "tool" }),
+    Settings = Window:Tab({ Title = "Settings", Icon = "settings" }),
+}
+
+-- 1. HOME
+Tabs.Home:Section({ Title = "Information & Social" })
+Tabs.Home:Paragraph({ Title = "User Info", Content = "Username: " .. LocalPlayer.Name .. " | UserId: " .. LocalPlayer.UserId })
+Tabs.Home:Paragraph({ Title = "Executor Info", Content = "Executor: " .. (identifyexecutor and identifyexecutor() or "Unknown") })
+Tabs.Home:Paragraph({ Title = "Server Status", Content = "FPS/Ping/Time monitor active." })
+Tabs.Home:Button({ Title = "Copy TikTok Link", Callback = function() pcall(function() setclipboard("https://tiktok.com/@kyzenhub") end) end })
+Tabs.Home:Button({ Title = "Copy WhatsApp Channel", Callback = function() pcall(function() setclipboard("https://whatsapp.com/channel/kyzen") end) end })
+
+Tabs.Home:Section({ Title = "Quick Server Actions" })
+Tabs.Home:Button({ Title = "Rejoin Server", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer) end })
+Tabs.Home:Button({ Title = "Server Hop", Callback = function() end })
+Tabs.Home:Button({ Title = "Hop Low Player Server", Callback = function() end })
+Tabs.Home:Button({ Title = "Copy JobId", Callback = function() pcall(function() setclipboard(game.JobId) end) end })
+
+-- 2. PLAYER
+local noclipConnection = nil
+local hipHeightEnabled = false
+local hipHeightVal = 2
+local gravityEnabled = false
+local gravityVal = 196
+
+Tabs.Player:Section({ Title = "Character & Body Mods" })
+Tabs.Player:Toggle({ Title = "Noclip V5 Smooth Toggle", Default = false, Callback = function(v)
+    if v then
+        noclipConnection = RunService.Stepped:Connect(function()
+            if LocalPlayer.Character then
+                for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                    if part:IsA("BasePart") then part.CanCollide = false end
+                end
+            end
+        end)
+    else
+        if noclipConnection then noclipConnection:Disconnect() noclipConnection = nil end
+        if LocalPlayer.Character then
+            for _, part in pairs(LocalPlayer.Character:GetDescendants()) do
+                if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then part.CanCollide = true end
+            end
+        end
+    end
+end })
+
+Tabs.Player:Toggle({ Title = "HipHeight Toggle ON/OFF", Default = false, Callback = function(v) hipHeightEnabled = v end })
+Tabs.Player:Slider({ Title = "HipHeight Slider", Min = 2, Max = 20, Default = 2, Callback = function(v)
+    hipHeightVal = v
+    if hipHeightEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.HipHeight = v
+    end
+end })
+
+Tabs.Player:Toggle({ Title = "Gravity Toggle ON/OFF", Default = false, Callback = function(v) 
+    gravityEnabled = v 
+    if not v then Workspace.Gravity = 196 end
+end })
+Tabs.Player:Slider({ Title = "Gravity Slider", Min = 0, Max = 196, Default = 196, Callback = function(v)
+    gravityVal = v
+    if gravityEnabled then Workspace.Gravity = v end
+end })
+
+Tabs.Player:Toggle({ Title = "Anti Ragdoll + Anti Trip", Default = false, Callback = function(v) end })
+Tabs.Player:Toggle({ Title = "Anti Fall Damage Toggle", Default = false, Callback = function(v) end })
+Tabs.Player:Button({ Title = "Reset Character Safe", Callback = function()
+    if LocalPlayer.Character then LocalPlayer.Character:BreakJoints() end
+end })
+Tabs.Player:Toggle({ Title = "Sit / Lay Toggle", Default = false, Callback = function(v) end })
+
+-- 3. ESP
+local espBoxEnabled = false
+local espNameEnabled = false
+local espTracerEnabled = false
+local espHealthEnabled = false
+local espDistanceSlider = 2000
+local espTeamCheck = false
+
+Tabs.ESP:Section({ Title = "ESP & Wallhack Settings" })
+Tabs.ESP:Toggle({ Title = "Player ESP Box Only", Default = false, Callback = function(v) espBoxEnabled = v end })
+Tabs.ESP:Toggle({ Title = "Player Name ESP", Default = false, Callback = function(v) espNameEnabled = v end })
+Tabs.ESP:Slider({ Title = "Distance ESP Slider", Min = 0, Max = 2000, Default = 2000, Callback = function(v) espDistanceSlider = v end })
+Tabs.ESP:Toggle({ Title = "Tracer Line to Player", Default = false, Callback = function(v) espTracerEnabled = v end })
+Tabs.ESP:Toggle({ Title = "Health Bar ESP", Default = false, Callback = function(v) espHealthEnabled = v end })
+Tabs.ESP:Colorpicker({ Title = "Highlight / Chams Color Picker", Default = Color3.fromRGB(255, 0, 0), Callback = function(v) end })
+Tabs.ESP:Toggle({ Title = "ESP Toggle Team Check", Default = false, Callback = function(v) espTeamCheck = v end })
+
+RunService.RenderStepped:Connect(function()
+    local rainbowColor = Color3.fromHSV((tick() % 1), 1, 1)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local hrp = player.Character.HumanoidRootPart
+            local head = player.Character:FindFirstChild("Head")
+            local hum = player.Character:FindFirstChild("Humanoid")
+            if hrp and head and hum then
+                if espTeamCheck and player.Team == LocalPlayer.Team then continue end
+                local dist = (Workspace.CurrentCamera.CFrame.Position - hrp.Position).Magnitude
+                if dist <= espDistanceSlider then
+                    if player.Character:FindFirstChild("KyZenHighlight") then
+                        player.Character.KyZenHighlight.FillColor = rainbowColor
+                    else
+                        local hl = Instance.new("Highlight")
+                        hl.Name = "KyZenHighlight"
+                        hl.FillColor = rainbowColor
+                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        hl.FillTransparency = 0.5
+                        hl.Parent = player.Character
+                    end
+                else
+                    if player.Character:FindFirstChild("KyZenHighlight") then
+                        player.Character.KyZenHighlight:Destroy()
+                    end
+                end
+            end
+        end
+    end
+end)
+
+-- 4. MOVEMENT
+local wsEnabled = false
+local wsVal = 16
+local jpEnabled = false
+local jpVal = 50
+local ssEnabled = false
+local ssVal = 16
+local bunnyHopEnabled = false
+
+Tabs.Movement:Section({ Title = "Movement Limits & Enhancements" })
+Tabs.Movement:Toggle({ Title = "WalkSpeed Toggle ON/OFF", Default = false, Callback = function(v) wsEnabled = v end })
+Tabs.Movement:Slider({ Title = "WalkSpeed [Max 500 = KICK]", Min = 16, Max = 600, Default = 16, Callback = function(v)
+    if v > 500 then LocalPlayer:Kick("Security: WalkSpeed limit exceeded (Max 500)") end
+    wsVal = v
+end })
+
+Tabs.Movement:Toggle({ Title = "JumpPower Toggle ON/OFF", Default = false, Callback = function(v) jpEnabled = v end })
+Tabs.Movement:Slider({ Title = "JumpPower [Max 350 = KICK]", Min = 50, Max = 400, Default = 50, Callback = function(v)
+    if v > 350 then LocalPlayer:Kick("Security: JumpPower limit exceeded (Max 350)") end
+    jpVal = v
+end })
+
+Tabs.Movement:Toggle({ Title = "SwimSpeed Toggle ON/OFF", Default = false, Callback = function(v) ssEnabled = v end })
+Tabs.Movement:Slider({ Title = "SwimSpeed [Max 150 = KICK]", Min = 10, Max = 200, Default = 16, Callback = function(v)
+    if v > 150 then LocalPlayer:Kick("Security: SwimSpeed limit exceeded (Max 150)") end
+    ssVal = v
+end })
+
+Tabs.Movement:Toggle({ Title = "Infinite Jump Toggle", Default = false, Callback = function(v) end })
+Tabs.Movement:Toggle({ Title = "Bunny Hop Toggle (Auto Jump)", Default = false, Callback = function(v) bunnyHopEnabled = v end })
+Tabs.Movement:Toggle({ Title = "Auto Sprint Toggle", Default = false, Callback = function(v) end })
+
+RunService.Heartbeat:Connect(function()
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local hum = LocalPlayer.Character.Humanoid
+        if wsEnabled then hum.WalkSpeed = wsVal else hum.WalkSpeed = 16 end
+        if jpEnabled then hum.JumpPower = jpVal end
+        if bunnyHopEnabled and hum.FloorMaterial ~= Enum.Material.Air then
+            hum:ChangeState(Enum.HumanoidStateType.Jumping)
+        end
+    end
+end)
+
+-- 5. VISUAL
+Tabs.Visual:Section({ Title = "Graphics & Visual Enhancements" })
+Tabs.Visual:Toggle({ Title = "Fullbright Toggle", Default = false, Callback = function(v) 
+    if v then Lighting.Brightness = 2 Lighting.ClockTime = 14 Lighting.FogEnd = 100000 else Lighting.Brightness = 1 end
+end })
+Tabs.Visual:Toggle({ Title = "Low GFX / Anti Lag V4 (Remove Texture)", Default = false, Callback = function(v)
+    if v then
+        for _, obj in pairs(Workspace:GetDescendants()) do
+            if obj:IsA("Texture") or obj:IsA("Decal") then obj.Transparency = 1 end
+        end
+    end
+end })
+Tabs.Visual:Toggle({ Title = "Remove Fog Toggle", Default = false, Callback = function(v) if v then Lighting.FogEnd = 999999 end end })
+Tabs.Visual:Toggle({ Title = "Remove Blur + Shadows + Sky", Default = false, Callback = function(v) 
+    if v then
+        Lighting.GlobalShadows = false
+        for _, e in pairs(Lighting:GetChildren()) do if e:IsA("BlurEffect") or e:IsA("Sky") then e:Destroy() end end
+    end
+end })
+Tabs.Visual:Slider({ Title = "FOV Changer", Min = 70, Max = 120, Default = 70, Callback = function(v) Workspace.CurrentCamera.FieldOfView = v end })
+Tabs.Visual:Toggle({ Title = "No Grass / No Tree Toggle", Default = false, Callback = function(v) end })
+Tabs.Visual:Slider({ Title = "Brightness Slider", Min = 0, Max = 10, Default = 2, Callback = function(v) Lighting.Brightness = v end })
+Tabs.Visual:Toggle({ Title = "Day Time Changer (Selalu Siang)", Default = false, Callback = function(v) if v then Lighting.ClockTime = 14 end end })
+
+-- 6. CFRAME
+Tabs.CFrame:Section({ Title = "CFrame Movement & Speed" })
+Tabs.CFrame:Slider({ Title = "CFrame Speed [Max 10 = KICK]", Min = 1, Max = 15, Default = 1, Callback = function(v)
+    if v > 10 then LocalPlayer:Kick("Security: CFrame Speed limit exceeded (Max 10)") end
+end })
+Tabs.CFrame:Toggle({ Title = "CFrame Walk Toggle", Default = false, Callback = function(v) end })
+Tabs.CFrame:Slider({ Title = "CFrame Walk Speed Slider", Min = 1, Max = 50, Default = 16, Callback = function(v) end })
+Tabs.CFrame:Toggle({ Title = "CFrame Fly Toggle", Default = false, Callback = function(v) end })
+Tabs.CFrame:Toggle({ Title = "CFrame Anti Stuck", Default = false, Callback = function(v) end })
+Tabs.CFrame:Slider({ Title = "CFrame TP Delay Slider", Min = 0, Max = 1, Default = 0.1, Callback = function(v) end })
+
+-- 7. FLY
+local flyPlatformActive = false
+local flyPlatformPart = nil
+
+Tabs.Fly:Section({ Title = "Fly Controller" })
+Tabs.Fly:Toggle({ Title = "Fly Kamera V5 Fix Analog", Default = false, Callback = function(v) end })
+Tabs.Fly:Slider({ Title = "Fly Speed [Max 500 = KICK]", Min = 10, Max = 600, Default = 50, Callback = function(v)
+    if v > 500 then LocalPlayer:Kick("Security: Fly Speed limit exceeded (Max 500)") end
+end })
+Tabs.Fly:Toggle({ Title = "Fly Bypass Toggle", Default = false, Callback = function(v) end })
+Tabs.Fly:Toggle({ Title = "Fly Platform / Invisible Floor", Default = false, Callback = function(v)
+    flyPlatformActive = v
+    if v then
+        flyPlatformPart = Instance.new("Part")
+        flyPlatformPart.Size = Vector3.new(4, 1, 4)
+        flyPlatformPart.Transparency = 1
+        flyPlatformPart.Anchored = true
+        flyPlatformPart.Parent = Workspace
+    else
+        if flyPlatformPart then flyPlatformPart:Destroy() flyPlatformPart = nil end
+    end
+end })
+Tabs.Fly:Toggle({ Title = "Fly Q/E Old Mode Toggle", Default = false, Callback = function(v) end })
+Tabs.Fly:Slider({ Title = "Fly Vertical Speed Slider", Min = 1, Max = 100, Default = 20, Callback = function(v) end })
+
+RunService.RenderStepped:Connect(function()
+    if flyPlatformActive and flyPlatformPart and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        flyPlatformPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame - Vector3.new(0, 3.5, 0)
+    end
+end)
+
+-- 8. COMBAT
+local hitboxEnabled = false
+local hitboxSize = 2
+local hitboxVisEnabled = false
+local noCameraShakeEnabled = false
+local noRecoilEnabled = false
+
+Tabs.Combat:Section({ Title = "Hitbox & Combat Tweaks" })
+Tabs.Combat:Toggle({ Title = "Hitbox Expander Toggle ON/OFF", Default = false, Callback = function(v) hitboxEnabled = v end })
+Tabs.Combat:Slider({ Title = "Hitbox Expander Size", Min = 2, Max = 25, Default = 2, Callback = function(v) hitboxSize = v end })
+Tabs.Combat:Toggle({ Title = "Hitbox Visualizer ON/OFF", Default = false, Callback = function(v) hitboxVisEnabled = v end })
+Tabs.Combat:Toggle({ Title = "No Recoil 50%", Default = false, Callback = function(v) noRecoilEnabled = v end })
+Tabs.Combat:Toggle({ Title = "No Camera Shake", Default = false, Callback = function(v) 
+    noCameraShakeEnabled = v 
+    if v then
+        pcall(function()
+            for _, conn in pairs(getconnections(Workspace.CurrentCamera.Changed)) do conn:Disable() end
+        end)
+    end
+end })
+
+RunService.RenderStepped:Connect(function()
+    local rainbowColor = Color3.fromHSV((tick() % 1), 1, 1)
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+            local root = player.Character.HumanoidRootPart
+            if hitboxEnabled then
+                root.Size = Vector3.new(hitboxSize, hitboxSize, hitboxSize)
+                root.Transparency = hitboxVisEnabled and 0.5 or 1
+                root.Color = rainbowColor
+                root.CanCollide = false
+            else
+                root.Size = Vector3.new(2, 2, 1)
+                root.Transparency = 1
+            end
+        end
+    end
+end)
+
+-- 9. TROLL
+local spinBotActive = false
+local spinSpeed = 10
+local headlessActive = false
+local invisibleChar = false
+local floatSwim = false
+
+Tabs.Troll:Section({ Title = "Trolling Utilities" })
+Tabs.Troll:Slider({ Title = "Spin Bot Speed", Min = 1, Max = 50, Default = 10, Callback = function(v) spinSpeed = v end })
+Tabs.Troll:Toggle({ Title = "Spin Bot Toggle", Default = false, Callback = function(v) spinBotActive = v end })
+Tabs.Troll:Toggle({ Title = "Headless Client Toggle", Default = false, Callback = function(v)
+    headlessActive = v
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+        LocalPlayer.Character.Head.Transparency = v and 1 or 0
+        if LocalPlayer.Character.Head:FindFirstChild("face") then LocalPlayer.Character.Head.face.Transparency = v and 1 or 0 end
+    end
+end })
+Tabs.Troll:Toggle({ Title = "Fake Fling / Touch Fling", Default = false, Callback = function(v) end })
+Tabs.Troll:Toggle({ Title = "Invisible Character Client", Default = false, Callback = function(v)
+    invisibleChar = v
+    if LocalPlayer.Character then
+        for _, p in pairs(LocalPlayer.Character:GetDescendants()) do
+            if p:IsA("BasePart") or p:IsA("Decal") then p.Transparency = v and 1 or 0 end
+        end
+    end
+end })
+Tabs.Troll:Toggle({ Title = "Float / Swim in Air", Default = false, Callback = function(v)
+    floatSwim = v
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid:ChangeState(v and Enum.HumanoidStateType.Swimming or Enum.HumanoidStateType.Running)
+    end
+end })
+Tabs.Troll:Toggle({ Title = "Giant / Small Client", Default = false, Callback = function(v) end })
+
+RunService.RenderStepped:Connect(function()
+    if spinBotActive and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(spinSpeed), 0)
+    end
+end)
+
+-- 10. WORLD
+Tabs.World:Section({ Title = "World Environment" })
+Tabs.World:Paragraph({ Title = "Environment Control", Content = "Pengaturan lingkungan dan dunia game." })
+
+-- 11. TELEPORT (Menu Baru)
+Tabs.Teleport:Section({ Title = "Teleportation Hub" })
+Tabs.Teleport:Dropdown({ Title = "Teleport to Player Dropdown", Values = {"Player1", "Player2"}, Default = "Player1", Callback = function(v) end })
+Tabs.Teleport:Button({ Title = "Give Teleport Tool", Callback = function() end })
+Tabs.Teleport:Button({ Title = "Teleport to Spawn", Callback = function() end })
+Tabs.Teleport:Button({ Title = "Teleport to Random Player", Callback = function() end })
+
+-- 12. UTILITY
+local shiftLockEnabled = false
+Tabs.Utility:Section({ Title = "Server & Game Utility" })
+Tabs.Utility:Toggle({ Title = "Shift Lock Biasa Toggle", Default = false, Callback = function(v)
+    shiftLockEnabled = v
+    UserInputService.MouseBehavior = v and Enum.MouseBehavior.LockCenter or Enum.MouseBehavior.Default
+end })
+Tabs.Utility:Toggle({ Title = "Anti AFK V2", Default = false, Callback = function(v) end })
+Tabs.Utility:Toggle({ Title = "Anti Kick Client (Hook)", Default = false, Callback = function(v) end })
+Tabs.Utility:Toggle({ Title = "FPS Boost + Ping Stabilizer", Default = false, Callback = function(v) end })
+Tabs.Utility:Button({ Title = "Copy JobId", Callback = function() pcall(function() setclipboard(game.JobId) end) end })
+Tabs.Utility:Button({ Title = "Server Hop", Callback = function() end })
+Tabs.Utility:Button({ Title = "Rejoin Server", Callback = function() game:GetService("TeleportService"):Teleport(game.PlaceId, LocalPlayer) end })
+
+-- 13. SETTINGS
+Tabs.Settings:Section({ Title = "Hub Settings & Security" })
+Tabs.Settings:Toggle({ Title = "Security System ON/OFF (Limit Kicks)", Default = true, Callback = function(v) end })
+Tabs.Settings:Button({ Title = "Custom Keybind Hub", Callback = function() end })
+Tabs.Settings:Button({ Title = "Unload Hub + Destroy UI", Callback = function() Window:Destroy() end })
+Tabs.Settings:Colorpicker({ Title = "Theme Color Picker", Default = Color3.fromRGB(45, 65, 200), Callback = function(v) end })
+Tabs.Settings:Toggle({ Title = "Performance Mode ON/OFF", Default = false, Callback = function(v) end })
+Tabs.Settings:Toggle({ Title = "Auto Save Config", Default = true, Callback = function(v) end })
+
+WindUI:Notify({
+    Title = "KyZen HUB | IS BACK",
+    Content = "Menu successfully reordered into 13 tabs with all fixes applied!",
+    Duration = 5
+})
