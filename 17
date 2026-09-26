@@ -1,0 +1,268 @@
+-- Memuat Rayfield UI Library Gen 2
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/gen2'))()
+
+-- Membuat Window Utama
+local Window = Rayfield:CreateWindow({
+   Name = "KyZen HUB",
+   LoadingTitle = "KyZen HUB",
+   LoadingSubtitle = "Auto Farm & Teleport System",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "KyZenHub",
+      FileName = "KyZenConfig"
+   },
+   KeySystem = false,
+})
+
+-- ==================== NOTIFIKASI & PEREKAMAN POSISI AWAL ====================
+Window:Notify({
+   Title = "⚠️ PERINGATAN",
+   Content = "Jangan bergerak! Sedang merekam posisi awal Anda...",
+   Duration = 5,
+   Image = 4483362458,
+})
+
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local autoTreadmillEnabled = false
+local auto2xTrainEnabled = false
+local instantInteractEnabled = false
+
+-- Variabel untuk menyimpan posisi persis saat script di-execute
+local initialExecutionCFrame = CFrame.new(0, 10, 0)
+
+-- Task untuk merekam posisi awal setelah karakter siap
+task.spawn(function()
+   local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+   local hrp = char:WaitForChild("HumanoidRootPart", 5)
+   if hrp then
+      initialExecutionCFrame = hrp.CFrame
+      Window:Notify({
+         Title = "KyZen HUB",
+         Content = "✅ Berhasil! Posisi awal & treadmill Anda telah dikunci.",
+         Duration = 4,
+         Image = 4483362458,
+      })
+   else
+      Window:Notify({
+         Title = "KyZen HUB",
+         Content = "❌ Gagal mendeteksi posisi, menggunakan default.",
+         Duration = 4,
+         Image = 4483362458,
+      })
+   end
+end)
+
+local function getBaseCFrame()
+   return initialExecutionCFrame
+end
+
+local function getTreadmillCFrame()
+   return initialExecutionCFrame
+end
+
+-- Fungsi Deteksi Biome/Area
+local function getBiomePart(biomeName)
+   local searchFolders = {Workspace, Workspace:FindFirstChild("Map"), Workspace:FindFirstChild("World"), Workspace:FindFirstChild("Biomes"), Workspace:FindFirstChild("Zones")}
+   for _, folder in ipairs(searchFolders) do
+      if folder then
+         for _, v in ipairs(folder:GetDescendants()) do
+            if v.Name:lower() == biomeName:lower() or v.Name:lower():find(biomeName:lower()) then
+               if v:IsA("Model") and v.PrimaryPart then
+                  return v.PrimaryPart.CFrame + Vector3.new(0, 5, 0)
+               elseif v:IsA("BasePart") then
+                  return v.CFrame + Vector3.new(0, 5, 0)
+               end
+            end
+         end
+      end
+   end
+   return nil
+end
+
+-- Auto Treadmill Loop (Mencari Remote terdekat dari posisi eksekusi)
+task.spawn(function()
+   while true do
+      if autoTreadmillEnabled then
+         pcall(function()
+            local remote = Workspace:FindFirstChild("TreadmillRemote", true) or Workspace:FindFirstChild("TrainRemote", true)
+            if remote and remote:IsA("RemoteEvent") then
+               remote:FireServer()
+            else
+               -- Cari di sekitar posisi awal player
+               for _, v in ipairs(Workspace:GetDescendants()) do
+                  if v:IsA("RemoteEvent") and (v.Name:lower():find("treadmill") or v.Name:lower():find("train")) then
+                     v:FireServer()
+                     break
+                  end
+               end
+            end
+         end)
+      end
+      task.wait(0.5)
+   end
+end)
+
+-- Auto 2X Train / Boost Loop
+task.spawn(function()
+   while true do
+      if auto2xTrainEnabled then
+         pcall(function()
+            local remote2x = Workspace:FindFirstChild("2XTrainRemote", true) or Workspace:FindFirstChild("BoostRemote", true)
+            if remote2x and remote2x:IsA("RemoteEvent") then
+               remote2x:FireServer()
+            end
+         end)
+      end
+      task.wait(1)
+   end
+end)
+
+-- Instant Interact Loop (ProximityPrompt)
+task.spawn(function()
+   while true do
+      if instantInteractEnabled then
+         pcall(function()
+            for _, v in ipairs(Workspace:GetDescendants()) do
+               if v:IsA("ProximityPrompt") then
+                  v.HoldDuration = 0
+               end
+            end
+         end)
+      end
+      task.wait(1)
+   end
+end)
+
+
+-- ==================== TAB 1: AUTO FARM ====================
+local FarmTab = Window:CreateTab("Auto Farm", 4483362458)
+
+FarmTab:CreateToggle({
+   Name = "Auto Treadmill",
+   CurrentValue = false,
+   Flag = "AutoTreadmillFlag",
+   Callback = function(Value)
+      autoTreadmillEnabled = Value
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Auto 2X Train / Boost",
+   CurrentValue = false,
+   Flag = "Auto2xTrainFlag",
+   Callback = function(Value)
+      auto2xTrainEnabled = Value
+   end,
+})
+
+FarmTab:CreateToggle({
+   Name = "Instant Interact (ProximityPrompt)",
+   CurrentValue = false,
+   Flag = "InstantInteractFlag",
+   Callback = function(Value)
+      instantInteractEnabled = Value
+   end,
+})
+
+
+-- ==================== TAB 2: TELEPORT ====================
+local TeleportTab = Window:CreateTab("Teleport", 4483362458)
+
+TeleportTab:CreateButton({
+   Name = "Teleport ke Base / Plot Saya",
+   Callback = function()
+      pcall(function()
+         local char = LocalPlayer.Character
+         if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = getBaseCFrame()
+         end
+      end)
+   end,
+})
+
+TeleportTab:CreateButton({
+   Name = "Teleport ke Treadmill Saya",
+   Callback = function()
+      pcall(function()
+         local char = LocalPlayer.Character
+         if char and char:FindFirstChild("HumanoidRootPart") then
+            char.HumanoidRootPart.CFrame = getTreadmillCFrame()
+         end
+      end)
+   end,
+})
+
+-- Tombol Teleport Biome / Area
+local biomes = {"Meadow", "Wetlands", "Safari", "Crystalline", "Arctic", "Jungle", "Prehistoric", "Abyss", "Mythical"}
+
+for _, biomeName in ipairs(biomes) do
+   TeleportTab:CreateButton({
+      Name = "Teleport ke Biome: " .. biomeName,
+      Callback = function()
+         pcall(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+               local targetCF = getBiomePart(biomeName)
+               if targetCF then
+                  char.HumanoidRootPart.CFrame = targetCF
+               end
+            end
+         end)
+      end,
+   })
+end
+
+
+-- ==================== TAB 3: PLAYER & SECURITY ====================
+local PlayerTab = Window:CreateTab("Player & Security", 4483362458)
+
+local wsEnabled = false
+local wsValue = 16
+
+PlayerTab:CreateToggle({
+   Name = "Enable WalkSpeed",
+   CurrentValue = false,
+   Flag = "WSToggle",
+   Callback = function(Value)
+      wsEnabled = Value
+      if not wsEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+         LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+      end
+   end,
+})
+
+PlayerTab:CreateInput({
+   Name = "Set WalkSpeed (Limit: 200)",
+   CurrentValue = "16",
+   PlaceholderText = "Masukkan angka (1 - 200)...",
+   RemoveTextAfterFocusLost = false,
+   Flag = "WSInput",
+   Callback = function(Text)
+      local num = tonumber(Text)
+      if num then
+         if num > 200 then
+            LocalPlayer:Kick("KyZen HUB Security: WalkSpeed melebihi batas maksimal 200! Anda telah di-kick.")
+         else
+            wsValue = num
+         end
+      end
+   end,
+})
+
+-- Loop Proteksi WalkSpeed & Anti-Bypass (>200 Kick)
+RunService.RenderStepped:Connect(function()
+   if wsEnabled then
+      if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+         local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+         if hum.WalkSpeed > 200 then
+            LocalPlayer:Kick("KyZen HUB Security: WalkSpeed melebihi batas maksimal 200! Anda telah di-kick.")
+         else
+            hum.WalkSpeed = wsValue
+         end
+      end
+   end
+end)
