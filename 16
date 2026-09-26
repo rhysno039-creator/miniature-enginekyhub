@@ -1,0 +1,238 @@
+-- ================= MAIN SCRIPT HUB =================
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "KyZen HUB | Backflip for Animals!",
+    Icon = "rbxassetid://10723415303",
+    Author = "KyZen",
+    Folder = "KyZenHubConfig",
+    Theme = "Dark",
+    Transparent = true,
+    Resizable = true,
+})
+
+-- Variabel & Layanan Utama
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+
+local autoTreadmillEnabled = false
+local auto2xTrainEnabled = false
+local instantInteractEnabled = false
+
+local wsEnabled = false
+local wsValue = 16
+
+-- Notifikasi awal & perekaman posisi eksekusi (Jangan bergerak saat script diexecute)
+WindUI:Notify({
+   Title = "⚠️ PERINGATAN",
+   Content = "Jangan bergerak! Sedang merekam posisi awal Anda...",
+   Duration = 5,
+})
+
+local initialExecutionCFrame = CFrame.new(0, 10, 0)
+task.spawn(function()
+   local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+   local hrp = char:WaitForChild("HumanoidRootPart", 5)
+   if hrp then
+      initialExecutionCFrame = hrp.CFrame
+      WindUI:Notify({
+         Title = "KyZen HUB",
+         Content = "✅ Berhasil! Posisi awal & treadmill Anda telah dikunci.",
+         Duration = 4,
+      })
+   else
+      WindUI:Notify({
+         Title = "KyZen HUB",
+         Content = "❌ Gagal mendeteksi posisi, menggunakan default.",
+         Duration = 4,
+      })
+   end
+end)
+
+-- Looping Auto Treadmill
+task.spawn(function()
+   while true do
+      if autoTreadmillEnabled then
+         pcall(function()
+            local remote = Workspace:FindFirstChild("TreadmillRemote", true) or Workspace:FindFirstChild("TrainRemote", true)
+            if remote and remote:IsA("RemoteEvent") then
+               remote:FireServer()
+            else
+               for _, v in ipairs(Workspace:GetDescendants()) do
+                  if v:IsA("RemoteEvent") and (v.Name:lower():find("treadmill") or v.Name:lower():find("train")) then
+                     v:FireServer()
+                     break
+                  end
+               end
+            end
+         end)
+      end
+      task.wait(0.5)
+   end
+end)
+
+-- Looping Auto 2X Train / Boost
+task.spawn(function()
+   while true do
+      if auto2xTrainEnabled then
+         pcall(function()
+            local remote2x = Workspace:FindFirstChild("2XTrainRemote", true) or Workspace:FindFirstChild("BoostRemote", true)
+            if remote2x and remote2x:IsA("RemoteEvent") then
+               remote2x:FireServer()
+            end
+         end)
+      end
+      task.wait(1)
+   end
+end)
+
+-- Looping Instant Interact (ProximityPrompt)
+task.spawn(function()
+   while true do
+      if instantInteractEnabled then
+         pcall(function()
+            for _, v in ipairs(Workspace:GetDescendants()) do
+               if v:IsA("ProximityPrompt") then
+                  v.HoldDuration = 0
+               end
+            end
+         end)
+      end
+      task.wait(1)
+   end
+end)
+
+-- ==================== PEMBUATAN TAB UI ====================
+local FarmTab = Window:Tab({ Title = "Auto Farm", Icon = "zap" })
+local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map-pin" })
+local PlayerTab = Window:Tab({ Title = "Player & Security", Icon = "user" })
+
+-- ==================== TAB 1: AUTO FARM ====================
+FarmTab:Toggle({
+    Title = "Auto Treadmill",
+    CurrentValue = false,
+    Callback = function(Value)
+        autoTreadmillEnabled = Value
+    end,
+})
+
+FarmTab:Toggle({
+    Title = "Auto 2X Train / Boost",
+    CurrentValue = false,
+    Callback = function(Value)
+        auto2xTrainEnabled = Value
+    end,
+})
+
+FarmTab:Toggle({
+    Title = "Instant Interact (ProximityPrompt)",
+    CurrentValue = false,
+    Callback = function(Value)
+        instantInteractEnabled = Value
+    end,
+})
+
+-- ==================== TAB 2: TELEPORT ====================
+TeleportTab:Button({
+    Title = "Teleport ke Base / Plot Saya",
+    Callback = function()
+        pcall(function()
+           local char = LocalPlayer.Character
+           if char and char:FindFirstChild("HumanoidRootPart") then
+              char.HumanoidRootPart.CFrame = initialExecutionCFrame
+           end
+        end)
+    end,
+})
+
+TeleportTab:Button({
+    Title = "Teleport ke Treadmill Saya",
+    Callback = function()
+        pcall(function()
+           local char = LocalPlayer.Character
+           if char and char:FindFirstChild("HumanoidRootPart") then
+              char.HumanoidRootPart.CFrame = initialExecutionCFrame
+           end
+        end)
+    end,
+})
+
+local biomes = {"Meadow", "Wetlands", "Safari", "Crystalline", "Arctic", "Jungle", "Prehistoric", "Abyss", "Mythical"}
+for _, biomeName in ipairs(biomes) do
+   TeleportTab:Button({
+      Title = "Teleport ke Biome: " .. biomeName,
+      Callback = function()
+         pcall(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+               local targetBiome = nil
+               for _, v in ipairs(Workspace:GetDescendants()) do
+                  if v.Name:lower() == biomeName:lower() or v.Name:lower():find(biomeName:lower()) then
+                     if v:IsA("Model") and v.PrimaryPart then
+                        targetBiome = v.PrimaryPart.CFrame + Vector3.new(0, 5, 0)
+                        break
+                     elseif v:IsA("BasePart") then
+                        targetBiome = v.CFrame + Vector3.new(0, 5, 0)
+                        break
+                     end
+                  end
+               end
+               if targetBiome then
+                  char.HumanoidRootPart.CFrame = targetBiome
+               end
+            end
+         end)
+      end,
+   })
+end
+
+-- ==================== TAB 3: PLAYER & SECURITY ====================
+PlayerTab:Toggle({
+    Title = "Enable WalkSpeed",
+    CurrentValue = false,
+    Callback = function(Value)
+        wsEnabled = Value
+        if not wsEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+           LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+        end
+    end,
+})
+
+PlayerTab:Input({
+    Title = "Set WalkSpeed (Limit: 200)",
+    Placeholder = "Masukkan angka (1 - 200)...",
+    Callback = function(Text)
+        local num = tonumber(Text)
+        if num then
+           if num > 200 then
+              LocalPlayer:Kick("KyZen HUB Security: WalkSpeed melebihi batas maksimal 200! Anda telah di-kick.")
+           else
+              wsValue = num
+           end
+        end
+    end,
+})
+
+-- Proteksi WalkSpeed & Anti-Bypass (>200 Kick)
+RunService.RenderStepped:Connect(function()
+   if wsEnabled then
+      if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+         local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+         if hum.WalkSpeed > 200 then
+            LocalPlayer:Kick("KyZen HUB Security: WalkSpeed melebihi batas maksimal 200! Anda telah di-kick.")
+         else
+            hum.WalkSpeed = wsValue
+         end
+      end
+   end
+end)
+
+-- Notifikasi Akhir
+WindUI:Notify({
+    Title = "KyZen HUB | Backflip for Animals!",
+    Icon = "rbxassetid://10723415303",
+    Content = "Script berhasil dimuat menggunakan Wind UI v1.6.66!",
+    Duration = 6.5,
+})
