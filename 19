@@ -1,0 +1,366 @@
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local CoreGui = game:GetService("CoreGui")
+local Workspace = game:GetService("Workspace")
+
+local LocalPlayer = Players.LocalPlayer
+
+-- Cari tempat GUI yang aman (Mendukung CoreGui / gethui / PlayerGui)
+local success, guiParent = pcall(function()
+    return gethui() or CoreGui
+end)
+if not success or not guiParent then
+    guiParent = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+-- Hapus GUI lama jika ada
+if guiParent:FindFirstChild("TreadmillAutoGUI") then
+    guiParent.TreadmillAutoGUI:Destroy()
+end
+
+-- Cari Remote secara aman (Tidak bikin script macet jika jalur berbeda)
+local treadmillRemote = nil
+task.spawn(function()
+    pcall(function()
+        local packages = ReplicatedStorage:WaitForChild("Packages", 3)
+        if packages then
+            local networker = packages:WaitForChild("Networker", 3)
+            if networker then
+                local remotes = networker:WaitForChild("_remotes", 3)
+                if remotes then
+                    local treadmill = remotes:WaitForChild("Treadmill", 3)
+                    if treadmill then
+                        treadmillRemote = treadmill:WaitForChild("RemoteEvent", 3)
+                    end
+                end
+            end
+        end
+    end)
+end)
+
+_G.AutoTreadmill = false
+_G.AutoBoost = false
+_G.InstantInteract = false
+
+-- Data Koordinat Biome
+local biomesData = {
+    ["Meadow"] = CFrame.new(276.630005, 4.60214138, 121.869995, 0.999458551, 0, 0.0329025351, 0, 1, 0, -0.0329025351, 0, 0.999458551),
+    ["Wetlands"] = CFrame.new(276.630005, 16.6021423, 248.869995, 0.999937713, 0, 0.0111586899, 0, 1, 0, -0.0111586899, 0, 0.999937713),
+    ["Safari"] = CFrame.new(276.630005, 44.6021423, 420.869995, 0.999652088, 0, -0.0263751149, 0, 1, 0, 0.0263751149, 0, 0.999652088),
+    ["Crystalline"] = CFrame.new(276.630005, 98.6021423, 658.869995, 0.997139692, 0, 0.0755805075, 0, 1, 0, -0.0755805075, 0, 0.997139692),
+    ["Arctic"] = CFrame.new(276.630005, 175.602142, 914.869995, 0.999650061, 0, -0.0264527276, 0, 1, 0, 0.0264527276, 0, 0.999650061),
+    ["Jungle"] = CFrame.new(276.630005, 268.602142, 1204.87, 0.999985456, 0, -0.00539610581, 0, 1, 0, 0.00539610581, 0, 0.999985456),
+    ["Prehistoric"] = CFrame.new(276.630005, 365.602142, 1568.87, 0.999108016, 0, 0.0422271118, 0, 1, 0, -0.0422271118, 0, 0.999108016),
+    ["Abyss"] = CFrame.new(276.630005, 496.602142, 2018.87, 0.999607503, -3.69905682e-23, 0.028014401, 3.25261772e-23, 1, 1.59816277e-22, -0.028014401, -1.58842356e-22, 0.999607503),
+    ["Mythical"] = CFrame.new(280.215179, 656.602112, 2585.30127, -0.999944746, 3.2987689e-08, -0.0105112521, 3.18992122e-08, 1, 1.03721298e-07, 0.0105112521, 1.03380273e-07, -0.999944746),
+}
+
+-- Fungsi Deteksi Plot & Base Dinamis
+local function getMyPlot()
+    local plotsFolder = workspace:FindFirstChild("Plots") or workspace:FindFirstChild("Tycoons") or workspace:FindFirstChild("PlayerPlots")
+    if plotsFolder then
+        for _, plot in ipairs(plotsFolder:GetChildren()) do
+            local owner = plot:FindFirstChild("Owner")
+            if owner and (owner.Value == LocalPlayer or owner.Value == LocalPlayer.Name) then
+                return plot
+            end
+        end
+    end
+    return nil
+end
+
+local function getBaseCFrame()
+    local plot = getMyPlot()
+    if plot then
+        local spawnPart = plot:FindFirstChild("SpawnLocation") or plot:FindFirstChild("Base") or plot.PrimaryPart
+        if spawnPart then
+            return spawnPart.CFrame + Vector3.new(0, 3, 0)
+        end
+    end
+    return CFrame.new(116.13, 5.70, 12.37)
+end
+
+local function getTreadmillCFrame()
+    local plot = getMyPlot()
+    if plot then
+        for _, obj in ipairs(plot:GetDescendants()) do
+            if obj.Name:lower():find("treadmill") and (obj:IsA("BasePart") or obj:IsA("Model")) then
+                if obj:IsA("Model") and obj.PrimaryPart then
+                    return obj.PrimaryPart.CFrame + Vector3.new(0, 3, 0)
+                elseif obj:IsA("BasePart") then
+                    return obj.CFrame + Vector3.new(0, 3, 0)
+                end
+            end
+        end
+    end
+    local baseCF = getBaseCFrame()
+    if baseCF then
+        return baseCF + Vector3.new(27.96, 0, 19.50)
+    end
+    return CFrame.new(144.09, 5.70, 31.87)
+end
+
+-- ScreenGui Utama
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "TreadmillAutoGUI"
+screenGui.Parent = guiParent
+screenGui.ResetOnSpawn = false
+
+-- Main Menu Frame
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 220, 0, 335)
+mainFrame.Position = UDim2.new(0.1, 0, 0.2, 0)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = screenGui
+
+local uiCorner = Instance.new("UICorner")
+uiCorner.CornerRadius = UDim.new(0, 8)
+uiCorner.Parent = mainFrame
+
+local titleBar = Instance.new("TextLabel")
+titleBar.Size = UDim2.new(1, 0, 0, 35)
+titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+titleBar.Text = "  Treadmill Auto Farm"
+titleBar.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleBar.TextSize = 14
+titleBar.Font = Enum.Font.SourceSansBold
+titleBar.TextXAlignment = Enum.TextXAlignment.Left
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+local minimizeBtn = Instance.new("TextButton")
+minimizeBtn.Size = UDim2.new(0, 35, 0, 35)
+minimizeBtn.Position = UDim2.new(1, -35, 0, 0)
+minimizeBtn.BackgroundTransparency = 1
+minimizeBtn.Text = "-"
+minimizeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+minimizeBtn.TextSize = 18
+minimizeBtn.Font = Enum.Font.SourceSansBold
+minimizeBtn.Parent = titleBar
+
+local contentContainer = Instance.new("Frame")
+contentContainer.Size = UDim2.new(1, 0, 1, -35)
+contentContainer.Position = UDim2.new(0, 0, 0, 35)
+contentContainer.BackgroundTransparency = 1
+contentContainer.Parent = mainFrame
+
+-- Laci / Drawer Biome Frame
+local biomeDrawer = Instance.new("Frame")
+biomeDrawer.Size = UDim2.new(0, 180, 0, 335)
+biomeDrawer.Position = UDim2.new(0.1, 230, 0.2, 0)
+biomeDrawer.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+biomeDrawer.BorderSizePixel = 0
+biomeDrawer.Visible = false
+biomeDrawer.Active = true
+biomeDrawer.Draggable = true
+biomeDrawer.Parent = screenGui
+
+local biomeCorner = Instance.new("UICorner")
+biomeCorner.CornerRadius = UDim.new(0, 8)
+biomeCorner.Parent = biomeDrawer
+
+local biomeTitle = Instance.new("TextLabel")
+biomeTitle.Size = UDim2.new(1, 0, 0, 35)
+biomeTitle.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+biomeTitle.Text = "  Pilih Biome"
+biomeTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+biomeTitle.TextSize = 14
+biomeTitle.Font = Enum.Font.SourceSansBold
+biomeTitle.TextXAlignment = Enum.TextXAlignment.Left
+biomeTitle.Parent = biomeDrawer
+
+local biomeTitleCorner = Instance.new("UICorner")
+biomeTitleCorner.CornerRadius = UDim.new(0, 8)
+biomeTitleCorner.Parent = biomeTitle
+
+local scrollingBiomes = Instance.new("ScrollingFrame")
+scrollingBiomes.Size = UDim2.new(1, -10, 1, -45)
+scrollingBiomes.Position = UDim2.new(0, 5, 0, 40)
+scrollingBiomes.BackgroundTransparency = 1
+scrollingBiomes.CanvasSize = UDim2.new(0, 0, 0, 420)
+scrollingBiomes.ScrollBarThickness = 4
+scrollingBiomes.Parent = biomeDrawer
+
+local uiLayout = Instance.new("UIListLayout")
+uiLayout.Padding = UDim.new(0, 6)
+uiLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+uiLayout.Parent = scrollingBiomes
+
+local function createToggleButton(name, posY, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Position = UDim2.new(0.05, 0, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.Text = name .. ": OFF"
+    btn.TextColor3 = Color3.fromRGB(255, 100, 100)
+    btn.TextSize = 13
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = contentContainer
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            btn.Text = name .. ": ON"
+            btn.TextColor3 = Color3.fromRGB(100, 255, 100)
+            btn.BackgroundColor3 = Color3.fromRGB(40, 100, 40)
+        else
+            btn.Text = name .. ": OFF"
+            btn.TextColor3 = Color3.fromRGB(255, 100, 100)
+            btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+        end
+        callback(state)
+    end)
+    return btn
+end
+
+local function createActionButton(name, posY, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(0.9, 0, 0, 35)
+    btn.Position = UDim2.new(0.05, 0, 0, posY)
+    btn.BackgroundColor3 = Color3.fromRGB(50, 120, 200)
+    btn.Text = name
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 13
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = contentContainer
+
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 6)
+    corner.Parent = btn
+
+    btn.MouseButton1Click:Connect(callback)
+    return btn
+end
+
+-- 1. Auto Treadmill
+createToggleButton("Auto Treadmill", 10, function(state)
+    _G.AutoTreadmill = state
+end)
+
+-- 2. Auto 2X Train
+createToggleButton("Auto 2X Train", 55, function(state)
+    _G.AutoBoost = state
+end)
+
+-- 3. Instant Interact
+createToggleButton("Instant Interact", 100, function(state)
+    _G.InstantInteract = state
+    if state then
+        for _, v in ipairs(Workspace:GetDescendants()) do
+            if v:IsA("ProximityPrompt") then
+                v.HoldDuration = 0
+            end
+        end
+    end
+end)
+
+-- 4. Teleport Base
+createActionButton("Teleport Base", 145, function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = getBaseCFrame()
+    end
+end)
+
+-- 5. Teleport Treadmill
+createActionButton("Teleport Treadmill", 190, function()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = getTreadmillCFrame()
+    end
+end)
+
+-- 6. Tombol Buka/Tutup Laci Biome
+local biomeMenuBtn = createActionButton("Biomes Menu 📁", 235, function()
+    biomeDrawer.Visible = not biomeDrawer.Visible
+end)
+biomeMenuBtn.BackgroundColor3 = Color3.fromRGB(150, 90, 30)
+
+-- Urutan Tombol Biome di dalam Laci
+local biomeOrder = {"Meadow", "Wetlands", "Safari", "Crystalline", "Arctic", "Jungle", "Prehistoric", "Abyss", "Mythical"}
+
+for _, name in ipairs(biomeOrder) do
+    local cframe = biomesData[name]
+    if cframe then
+        local biomeBtn = Instance.new("TextButton")
+        biomeBtn.Size = UDim2.new(0.95, 0, 0, 32)
+        biomeBtn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+        biomeBtn.Text = name
+        biomeBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+        biomeBtn.TextSize = 13
+        biomeBtn.Font = Enum.Font.SourceSansBold
+        biomeBtn.Parent = scrollingBiomes
+
+        local bCorner = Instance.new("UICorner")
+        bCorner.CornerRadius = UDim.new(0, 5)
+        bCorner.Parent = biomeBtn
+
+        biomeBtn.MouseButton1Click:Connect(function()
+            local char = LocalPlayer.Character
+            if char and char:FindFirstChild("HumanoidRootPart") then
+                char.HumanoidRootPart.CFrame = cframe
+            end
+        end)
+    end
+end
+
+-- Listener ProximityPrompt Baru
+Workspace.DescendantAdded:Connect(function(v)
+    if _G.InstantInteract and v:IsA("ProximityPrompt") then
+        v.HoldDuration = 0
+    end
+end)
+
+-- Minimize Logic
+local minimized = false
+minimizeBtn.MouseButton1Click:Connect(function()
+    minimized = not minimized
+    if minimized then
+        contentContainer.Visible = false
+        mainFrame.Size = UDim2.new(0, 220, 0, 35)
+        minimizeBtn.Text = "+"
+        biomeDrawer.Visible = false
+    else
+        contentContainer.Visible = true
+        mainFrame.Size = UDim2.new(0, 220, 0, 335)
+        minimizeBtn.Text = "-"
+    end
+end)
+
+-- Background Loops (Menggunakan pcall agar aman jika remote belum siap)
+task.spawn(function()
+    while true do
+        if _G.AutoTreadmill and treadmillRemote then
+            pcall(function()
+                local char = LocalPlayer.Character
+                if char and char:FindFirstChild("HumanoidRootPart") then
+                    char.HumanoidRootPart.CFrame = getTreadmillCFrame()
+                end
+                treadmillRemote:FireServer("enterTreadmill")
+            end)
+        end
+        task.wait(1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if _G.AutoBoost and treadmillRemote then
+            pcall(function()
+                treadmillRemote:FireServer("claimBoost")
+            end)
+        end
+        task.wait(1)
+    end
+end)
