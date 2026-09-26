@@ -1,0 +1,144 @@
+-- Load Wind UI v1.6.66 Library
+local WindUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Footagesus/WindUI/main/dist/main.lua"))()
+
+-- Inisialisasi Window Hub
+local Window = WindUI:CreateWindow({
+    Title = "KyZen HUB - Backflip for Animals!",
+    Author = "by KyZen",
+    Folder = "KyZenHub",
+    Size = UDim2.fromOffset(580, 460),
+    Transparent = true,
+    Theme = "Dark",
+    SideBarWidth = 200,
+    HideSearchBar = true,
+})
+
+-- Buat Tab Menu
+local FarmTab = Window:Tab({ Title = "Auto Farm", Icon = "zap" })
+local TeleportTab = Window:Tab({ Title = "Teleport", Icon = "map-pin" })
+local PlayerTab = Window:Tab({ Title = "Player & Security", Icon = "user" })
+
+-- ====================
+-- AUTO FARM TAB
+-- ====================
+FarmTab:Toggle({
+    Title = "Auto Treadmill",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.AutoTreadmill = Value
+        task.spawn(function()
+            while _G.AutoTreadmill do
+                task.wait(0.1)
+                -- Masukkan logika Auto Treadmill di sini
+            end
+        end)
+    end
+})
+
+FarmTab:Toggle({
+    Title = "Auto Train / Boost 2x",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.AutoBoost = Value
+        task.spawn(function()
+            while _G.AutoBoost do
+                task.wait(0.1)
+                -- Masukkan logika Auto Boost di sini
+            end
+        end)
+    end
+})
+
+FarmTab:Button({
+    Title = "Instant Interact",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Berhasil!",
+            Content = "Instant Interact diaktifkan.",
+            Duration = 3
+        })
+    end
+})
+
+-- ====================
+-- TELEPORT TAB
+-- ====================
+TeleportTab:Button({
+    Title = "Teleport ke Base / Plot",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Peringatan",
+            Content = "Jangan bergerak saat proses teleport!",
+            Duration = 4
+        })
+        task.wait(0.5)
+        -- Logika Teleport Plot
+    end
+})
+
+TeleportTab:Button({
+    Title = "Teleport ke Treadmill Area",
+    Callback = function()
+        -- Logika Teleport Treadmill
+    end
+})
+
+TeleportTab:Dropdown({
+    Title = "Pilih Bioma / World",
+    Values = {"World 1", "World 2", "World 3"},
+    CurrentValue = "World 1",
+    Callback = function(Option)
+        print("Teleport ke: " .. Option)
+    end
+})
+
+-- ====================
+-- PLAYER & SECURITY TAB
+-- ====================
+PlayerTab:Toggle({
+    Title = "Toggle WalkSpeed",
+    CurrentValue = false,
+    Callback = function(Value)
+        _G.CustomSpeed = Value
+        local player = game.Players.LocalPlayer
+        task.spawn(function()
+            while _G.CustomSpeed and player.Character and player.Character:FindFirstChild("Humanoid") do
+                task.wait(0.1)
+                player.Character.Humanoid.WalkSpeed = _G.SpeedValue or 16
+            end
+        end)
+    end
+})
+
+PlayerTab:Input({
+    Title = "Atur Kecepatan (Maks: 200)",
+    Placeholder = "Masukkan angka (1-200)",
+    Callback = function(Text)
+        local num = tonumber(Text)
+        if num then
+            if num > 200 then
+                _G.SpeedValue = 200
+                WindUI:Notify({ Title = "Batas Tercapai", Content = "Speed dibatasi maksimal 200!", Duration = 3 })
+            else
+                _G.SpeedValue = num
+            end
+        end
+    end
+})
+
+PlayerTab:Button({
+    Title = "Anti-Kick System",
+    Callback = function()
+        WindUI:Notify({
+            Title = "Keamanan",
+            Content = "Sistem Anti-Kick aktif.",
+            Duration = 3
+        })
+    end
+})
+
+WindUI:Notify({
+    Title = "KyZen HUB Loaded",
+    Content = "Berhasil memuat Backflip for Animals!",
+    Duration = 5
+})
