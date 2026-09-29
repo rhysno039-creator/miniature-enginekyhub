@@ -1,0 +1,340 @@
+-- Gasifier Complete Auto Script + Anti AFK & Instant Interact
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
+local VirtualUser = game:GetService("VirtualUser")
+local LocalPlayer = Players.LocalPlayer
+
+local Gasifier = ReplicatedStorage:WaitForChild("Gasifier")
+local Services = Gasifier:WaitForChild("Services")
+
+-- Remote References
+local UpgradeBaseRF = Services:WaitForChild("PlotService"):WaitForChild("RF"):WaitForChild("UpgradeBase")
+local FarmDamageRF = Services:WaitForChild("TrainingService"):WaitForChild("RF"):WaitForChild("FarmDamage")
+local BuySpeedRF = Services:WaitForChild("UpgradeService"):WaitForChild("RF"):WaitForChild("BuyUpgradeSpeed")
+local HittedRF = Services:WaitForChild("Projectile"):WaitForChild("RF"):WaitForChild("Hitted")
+local BuyWeaponRF = Services:WaitForChild("WeaponService"):WaitForChild("RF"):WaitForChild("BuyWeapon")
+
+-- State Variables
+local autoUpgradeBase = false
+local autoDamageFarm = false
+local autoHit = false
+local autoBuySpeed = false
+local antiAfk = false
+local instantInteract = false
+local speedMode = 1
+
+-- Teleport Save Zone CFrame
+local saveZoneCF = CFrame.new(41.2884026, 28.5, -121.731873, 0.0678511187, -5.38646034e-08, -0.997695446, 2.86185853e-09, 1, -5.37943947e-08, 0.997695446, 7.94746768e-10, 0.0678511187)
+
+local function teleportToSaveZone()
+    local char = LocalPlayer.Character
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        char.HumanoidRootPart.CFrame = saveZoneCF
+    end
+end
+
+-- GUI Setup
+local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
+if PlayerGui:FindFirstChild("GasifierGui") then
+    PlayerGui.GasifierGui:Destroy()
+end
+
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "GasifierGui"
+ScreenGui.ResetOnSpawn = false
+ScreenGui.Parent = PlayerGui
+
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 260, 0, 380)
+MainFrame.Position = UDim2.new(0.5, -130, 0.25, -190)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
+
+local Corner = Instance.new("UICorner")
+Corner.CornerRadius = UDim.new(0, 10)
+Corner.Parent = MainFrame
+
+local TopBar = Instance.new("Frame")
+TopBar.Size = UDim2.new(1, 0, 0, 35)
+TopBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+TopBar.BorderSizePixel = 0
+TopBar.Parent = MainFrame
+
+local TopCorner = Instance.new("UICorner")
+TopCorner.CornerRadius = UDim.new(0, 10)
+TopCorner.Parent = TopBar
+
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -70, 1, 0)
+Title.Position = UDim2.new(0, 10, 0, 0)
+Title.BackgroundTransparency = true
+Title.Text = "Gasifier Pro Script"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextSize = 13
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Parent = TopBar
+
+local GunMenuBtn = Instance.new("TextButton")
+GunMenuBtn.Size = UDim2.new(0, 30, 0, 25)
+GunMenuBtn.Position = UDim2.new(1, -65, 0, 5)
+GunMenuBtn.BackgroundColor3 = Color3.fromRGB(60, 120, 180)
+GunMenuBtn.Text = "Gun"
+GunMenuBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+GunMenuBtn.TextSize = 11
+GunMenuBtn.Font = Enum.Font.SourceSansBold
+GunMenuBtn.Parent = TopBar
+Instance.new("UICorner", GunMenuBtn).CornerRadius = UDim.new(0, 5)
+
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 25, 0, 25)
+CloseBtn.Position = UDim2.new(1, -30, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+CloseBtn.Text = "-"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.TextSize = 14
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.Parent = TopBar
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 5)
+
+local ScrollFrame = Instance.new("ScrollingFrame")
+ScrollFrame.Size = UDim2.new(1, 0, 1, -40)
+ScrollFrame.Position = UDim2.new(0, 0, 0, 35)
+ScrollFrame.BackgroundTransparency = true
+ScrollFrame.CanvasSize = UDim2.new(0, 0, 0, 500)
+ScrollFrame.ScrollBarThickness = 3
+ScrollFrame.Parent = MainFrame
+
+-- Fungsi Pembuat Toggle
+local function createToggle(text, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -16, 0, 32)
+    btn.Position = UDim2.new(0, 8, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    btn.Text = text .. ": OFF"
+    btn.TextColor3 = Color3.fromRGB(255, 90, 90)
+    btn.TextSize = 12
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = ScrollFrame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    
+    local state = false
+    btn.MouseButton1Click:Connect(function()
+        state = not state
+        if state then
+            btn.Text = text .. ": ON"
+            btn.TextColor3 = Color3.fromRGB(90, 255, 90)
+            btn.BackgroundColor3 = Color3.fromRGB(30, 70, 30)
+        else
+            btn.Text = text .. ": OFF"
+            btn.TextColor3 = Color3.fromRGB(255, 90, 90)
+            btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+        end
+        callback(state)
+    end)
+end
+
+-- Fungsi Pembuat Tombol Biasa
+local function createButton(text, yPos, callback)
+    local btn = Instance.new("TextButton")
+    btn.Size = UDim2.new(1, -16, 0, 32)
+    btn.Position = UDim2.new(0, 8, 0, yPos)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.Text = text
+    btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.TextSize = 12
+    btn.Font = Enum.Font.SourceSansBold
+    btn.Parent = ScrollFrame
+    Instance.new("UICorner", btn).CornerRadius = UDim.new(0, 6)
+    btn.MouseButton1Click:Connect(callback)
+end
+
+-- Pendaftaran Menu Toggles & Buttons
+createToggle("Auto Upgrade Base", 6, function(s) autoUpgradeBase = s end)
+createToggle("Auto Damage Farm", 44, function(s) autoDamageFarm = s end)
+createToggle("Auto Hit Enemy", 82, function(s) autoHit = s end)
+createToggle("Auto Buy Speed", 120, function(s) autoBuySpeed = s end)
+createToggle("Anti AFK", 158, function(s) antiAfk = s end)
+createToggle("Instant Interact", 196, function(s) instantInteract = s end)
+
+createButton("TP to Save Zone", 234, teleportToSaveZone)
+
+local speedBtn = Instance.new("TextButton")
+speedBtn.Size = UDim2.new(1, -16, 0, 32)
+speedBtn.Position = UDim2.new(0, 8, 0, 272)
+speedBtn.BackgroundColor3 = Color3.fromRGB(50, 90, 130)
+speedBtn.Text = "Speed Mode: " .. speedMode
+speedBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+speedBtn.TextSize = 12
+speedBtn.Font = Enum.Font.SourceSansBold
+speedBtn.Parent = ScrollFrame
+Instance.new("UICorner", speedBtn).CornerRadius = UDim.new(0, 6)
+
+speedBtn.MouseButton1Click:Connect(function()
+    if speedMode == 1 then speedMode = 5
+    elseif speedMode == 5 then speedMode = 10
+    else speedMode = 1 end
+    speedBtn.Text = "Speed Mode: " .. speedMode
+end)
+
+-- Frame Menu Beli Senjata
+local GunFrame = Instance.new("Frame")
+GunFrame.Size = UDim2.new(0, 180, 0, 380)
+GunFrame.Position = UDim2.new(1, 6, 0, 0)
+GunFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+GunFrame.BorderSizePixel = 0
+GunFrame.Visible = false
+GunFrame.Parent = MainFrame
+Instance.new("UICorner", GunFrame).CornerRadius = UDim.new(0, 10)
+
+local GunScroll = Instance.new("ScrollingFrame")
+GunScroll.Size = UDim2.new(1, 0, 1, -30)
+GunScroll.Position = UDim2.new(0, 0, 0, 30)
+GunScroll.BackgroundTransparency = true
+GunScroll.CanvasSize = UDim2.new(0, 0, 0, 520)
+GunScroll.ScrollBarThickness = 3
+GunScroll.Parent = GunFrame
+
+local GunTitle = Instance.new("TextLabel")
+GunTitle.Size = UDim2.new(1, 0, 0, 30)
+GunTitle.BackgroundTransparency = true
+GunTitle.Text = "Pilih Senjata"
+GunTitle.TextColor3 = Color3.fromRGB(255, 255, 255)
+GunTitle.TextSize = 12
+GunTitle.Font = Enum.Font.SourceSansBold
+GunTitle.Parent = GunFrame
+
+local guns = {"Pistol", "Scar", "P90", "Mosin", "Galil", "M4", "Shotgun", "VSS", "Dual Vector", "Ak-47", "LMG", "Dual MP7", "RPK-74"}
+local gy = 6
+for _, gunName in ipairs(guns) do
+    local gBtn = Instance.new("TextButton")
+    gBtn.Size = UDim2.new(1, -16, 0, 32)
+    gBtn.Position = UDim2.new(0, 8, 0, gy)
+    gBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+    gBtn.Text = "Buy " .. gunName
+    gBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    gBtn.TextSize = 11
+    gBtn.Font = Enum.Font.SourceSansBold
+    gBtn.Parent = GunScroll
+    Instance.new("UICorner", gBtn).CornerRadius = UDim.new(0, 5)
+    
+    gBtn.MouseButton1Click:Connect(function()
+        pcall(function()
+            BuyWeaponRF:InvokeServer(gunName)
+        end)
+    end)
+    gy = gy + 38
+end
+
+local gunOpen = false
+GunMenuBtn.MouseButton1Click:Connect(function()
+    gunOpen = not gunOpen
+    GunFrame.Visible = gunOpen
+end)
+
+CloseBtn.MouseButton1Click:Connect(function()
+    ScreenGui:Destroy()
+end)
+
+-- Fitur Geser UI (Dragging)
+local dragging, dragStart, startPos
+TopBar.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragging = true
+        dragStart = input.Position
+        startPos = MainFrame.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
+
+-- Loop Tugas Otomatis (Background Tasks)
+task.spawn(function()
+    while true do
+        if autoUpgradeBase then
+            pcall(function() UpgradeBaseRF:InvokeServer() end)
+        end
+        task.wait(1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoDamageFarm then
+            pcall(function() FarmDamageRF:InvokeServer() end)
+        end
+        task.wait(1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoBuySpeed then
+            pcall(function()
+                if speedMode == 1 then
+                    BuySpeedRF:InvokeServer()
+                else
+                    BuySpeedRF:InvokeServer(speedMode)
+                end
+            end)
+        end
+        task.wait(1)
+    end
+end)
+
+task.spawn(function()
+    while true do
+        if autoHit then
+            pcall(function()
+                local args = {
+                    {
+                        Normal = vector.create(-1, 0, 0),
+                        BulletCFrame = CFrame.new(646.7847290039062, 16.986570358276367, -155.86155700683594, 0.4155648946762085, 0.03686750680208206, -0.9088160991668701, -1.862645149230957e-09, 0.9991782903671265, 0.04053318127989769, 0.9095636010169983, -0.016844164580106735, 0.4152233600616455),
+                        BulletColor = Color3.new(1, 1, 0),
+                        Owner = LocalPlayer,
+                        Position = vector.create(599, 19.117767333984375, -134.02993774414062),
+                        InitialCFrame = CFrame.new(542.281005859375, 21.64743423461914, -108.11637878417969, 0.4155585467815399, 0.036867737770080566, -0.9088190197944641, -1.8626449271863521e-09, 0.9991782307624817, 0.040533311665058136, 0.9095664024353027, -0.01684396155178547, 0.4152170717716217),
+                        Material = Enum.Material.Plastic,
+                        Instance = workspace:WaitForChild("WallFolder"):WaitForChild("Swamp"):WaitForChild("Doors"):WaitForChild("Door"),
+                        Distance = 69.90959930419922
+                    }
+                }
+                HittedRF:InvokeServer(unpack(args))
+            end)
+        end
+        task.wait(0.5)
+    end
+end)
+
+-- Anti AFK Handler
+LocalPlayer.Idled:Connect(function()
+    if antiAfk then
+        VirtualUser:CaptureController()
+        VirtualUser:ClickButton2(Vector2.new())
+    end
+end)
+
+-- Instant Interact Handler
+task.spawn(function()
+    while true do
+        if instantInteract then
+            pcall(function()
+                for _, v in ipairs(workspace:GetDescendants()) do
+                    if v:IsA("ProximityPrompt") then
+                        v.HoldDuration = 0
+                    end
+                end
+            end)
+        end
+        task.wait(1)
+    end
+end)
