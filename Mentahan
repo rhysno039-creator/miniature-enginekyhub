@@ -1,0 +1,360 @@
+ui utama vex
+
+local WindUI = loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()
+
+local Window = WindUI:CreateWindow({
+    Title = "Vex",
+    Icon = "ghost",
+    Author = "By Ky",
+    Folder = "Vex",
+    Size = UDim2.fromOffset(600, 560),
+    MinSize = UDim2.fromOffset(320, 320),
+    MaxSize = UDim2.fromOffset(999, 999),
+    ToggleKey = Enum.KeyCode.RightControl,
+    Transparent = false,
+    Theme = "Dark",
+    Resizable = true,
+    SideBarWidth = 200,
+    BackgroundImageTransparency = 0.42,
+    Background = "rbxassetid://88325866817771",
+    HideSearchBar = false,
+    ScrollBarEnabled = true,
+
+    User = {
+        Enabled = true,
+        Anonymous = false,
+        Callback = function()
+            print("Profil user diklik")
+        end,
+    },
+
+    Radius = 14,
+    ElementsRadius = 10,
+
+    Topbar = {
+        Enabled = true,
+    },
+})
+
+system key
+
+local Window = WindUI:CreateWindow({
+    Title = "Vex",
+    Icon = "key-round",
+    Author = "By Ky",
+    Folder = "Vex",
+
+    KeySystem = {
+        Key = { "828", "838" },
+        Note = "enter the key to open the script. Klik Get Key kalau belum punya.",
+        Thumbnail = {
+            Image = "rbxassetid://88325866817771",
+            Title = "Dapatkan Key",
+        },
+        URL = "https://link-ke-key-kamu.com",
+        SaveKey = false,
+    },
+})
+
+kalo banyak yg make script pake ini untuk system key
+
+KeySystem = {
+    API = {
+        Type = "platoboost",
+        ServiceId = "ISI_SERVICE_ID_KAMU",
+        Secret = "ISI_SECRET_KAMU",
+    },
+    Note = "click "get key" to obtain the link, lalu tempel key di sini.",
+    URL = "https://link-ke-key-kamu.com",
+}
+
+Tab
+
+local Tab = Window:Tab({
+    Title = "Main",
+    Icon = "home",
+})
+
+local TabTeleport = Window:Tab({
+    Title = "Teleport",
+    Icon = "map-pin",
+})
+
+local TabSettings = Window:Tab({
+    Title = "Settings",
+    Icon = "settings",
+})
+
+pembatas di dalam tab
+
+local SectionFarm = Tab:Section({
+    Title = "Auto Farm",
+    Icon = "swords",
+})
+
+local SectionTeleport = Tab:Section({
+    Title = "Teleport",
+    Icon = "map-pin",
+})
+
+pop up
+
+dialog 
+
+Window:Dialog({
+    Title = "Yakin reset setting?",
+    Content = "Semua setting akan kembali ke awal.",
+    Buttons = {
+        {
+            Title = "Ya, Reset",
+            Callback = function()
+                print("Setting di-reset")
+            end,
+        },
+        {
+            Title = "Batal",
+            Variant = "Secondary",
+            Callback = function()
+                print("Dibatalkan")
+            end,
+        },
+    },
+})
+
+notifikasi 
+
+WindUI:Notify({
+    Title = "Berhasil!",
+    Content = "Auto Farm berhasil diaktifkan.",
+    Duration = 3,
+    Icon = "check",
+})
+
+tags : letak nya di samping nama script 
+
+Window:Tag({
+    Title = "v1.0",
+    Icon = "sparkles",
+    Color = Color3.fromRGB(139, 92, 246),
+})
+
+-- Contoh lain:
+Window:Tag({
+    Title = "PREMIUM",
+    Icon = "crown",
+    Color = Color3.fromRGB(245, 158, 11),
+})
+
+pop up text section 
+
+Window:Popup({
+    Title = "Pengumuman",
+    Content = "Update baru: Auto Farm sekarang lebih cepat!",
+})
+
+-- Tab Section sebagai pembatas
+Tab:Section({ Title = "Auto Farm", Icon = "swords" })
+Tab:Section({ Title = "Teleport", Icon = "map-pin" })
+
+elemen dan semua kompunen
+
+button 
+
+interaksi 
+
+Tab:Button({
+    Title = "Teleport ke Spawn",
+    Desc = "Pindahkan karakter ke titik spawn",
+    Callback = function()
+        print("Tombol ditekan!")
+        -- Taruh kode teleport di sini
+    end,
+})
+
+toggle 
+
+Tab:Toggle({
+    Title = "Auto Farm",
+    Value = false,
+    Callback = function(state)
+        print("Auto Farm:", state)
+        if state then
+            print("Auto Farm NYALA")
+        else
+            print("Auto Farm MATI")
+        end
+    end,
+})
+
+silinder 
+
+Tab:Slider({
+    Title = "WalkSpeed",
+    Value = 50,
+    Min = 0,
+    Max = 400,
+    Callback = function(value)
+        print("WalkSpeed jadi:", value)
+        -- Contoh: game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = value
+    end,
+})
+
+input
+
+dropdown
+
+Tab:Dropdown({
+    Title = "Pilih Map",
+    Values = { "Map 1", "Map 2", "Map 3" },
+    Value = "Map 1",
+    Callback = function(selected)
+        print("Map dipilih:", selected)
+    end,
+})
+
+keybind 
+
+Tab:Keybind({
+    Title = "Buka / Tutup Menu",
+    Key = Enum.KeyCode.RightControl,
+    Callback = function()
+        print("Keybind ditekan!")
+    end,
+})
+
+color picker
+
+Tab:Colorpicker({
+    Title = "Warna ESP",
+    Default = Color3.fromRGB(139, 92, 246),
+    Callback = function(color)
+        print("Warna baru:", color)
+    end,
+})
+
+ tampilan 
+
+section 
+
+local Section = Tab:Section({
+    Title = "Auto Farm",
+    Icon = "swords",
+    -- Di beberapa versi: Opened = true
+})
+
+-- Semua elemen di bawah ini ditaruh di dalam Tab / Section
+-- supaya pengelompokannya jelas.
+
+paragraf 
+
+Tab:Paragraph({
+    Title = "Info Script",
+    Desc = "Script ini masih versi beta. Laporkan bug ke Discord kami kalau ada fitur yang error.",
+})
+
+code
+
+Tab:Code({
+    Title = "Loadstring",
+    Code = 'loadstring(game:HttpGet("https://github.com/Footagesus/WindUI/releases/latest/download/main.lua"))()',
+    Copy = true,
+})
+
+divider
+
+Tab:Divider()
+
+garis pemisah
+
+space
+
+Tab:Space()
+
+ruang kosong vertikal di buat untuk memberi napas atau celah untuk fitur
+
+progress 
+
+Tab:ProgressBar({
+    Title = "Progres Farm",
+    Value = 50,
+    -- Di beberapa implementasi, Value bisa di-update lewat
+    -- variabel yang dikembalikan ProgressBar
+})
+
+batang progres 0 sampai 100
+
+Hstack
+
+Tab:HStack(function(H)
+    H:Toggle({
+        Title = "Auto Farm",
+        Value = false,
+        Callback = function(state)
+            print("Auto Farm:", state)
+        end,
+    })
+
+    H:Toggle({
+        Title = "Auto Collect",
+        Value = false,
+        Callback = function(state)
+            print("Auto Collect:", state)
+        end,
+    })
+end)
+
+untuk menyusun fitur secara horizontal, dan akan di pakai ke beberapa fitur yg nanti saya akan tambah kan 
+
+VStack
+
+Tab:VStack(function(V)
+    V:Toggle({
+        Title = "ESP Player",
+        Value = true,
+        Callback = function(state)
+            print("ESP:", state)
+        end,
+    })
+
+    V:Button({
+        Title = "Refresh ESP",
+        Callback = function()
+            print("ESP di-refresh")
+        end,
+    })
+end)
+
+untuk menyusun beberapa fitur yang saya akan tambah secara vertikal atau kebalikan dari HStack yg menyusun fitur secara Horisontal 
+
+congfig tidak reset saat di execut ulang 
+
+local Window = WindUI:CreateWindow({
+    Title = "Nama Script Kamu",
+    Folder = "WindUI", -- Nama folder Config
+    -- Folder ini yang menyimpan setting pengguna
+})
+
+-- Selama Folder sama, setting yang diubah user
+-- akan tetap tersimpan saat script di-execute ulang.
+
+icon
+
+-- Nama Lucide
+Window:Tab({ Title = "Main", Icon = "home" })
+Window:Tab({ Title = "Favorit", Icon = "star" })
+Window:Tab({ Title = "Settings", Icon = "settings" })
+
+-- Atau pakai asset Roblox
+Window:Tab({
+    Title = "Custom",
+    Icon = "rbxassetid://88325866817771",
+})
+
+WindUI memakai ikon Lucide. Kamu cukup menulis namanya dalam huruf kecil, tanpa perlu mengunggah gambar.
+
+home
+star
+settings
+swords
+
+
